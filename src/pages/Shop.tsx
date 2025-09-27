@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Slider } from "@/components/ui/slider";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import ProductCard from "@/components/ProductCard";
 import woodFrameProduct from "@/assets/wood-frame-product.jpg";
 import metalFrameProduct from "@/assets/metal-frame-product.jpg";
 
@@ -228,80 +229,12 @@ const Shop = () => {
             {/* Products Grid */}
             <div className={viewMode === "grid" ? "gallery-grid" : "space-y-4"}>
               {filteredProducts.map((product) => (
-                <Card key={product.id} className="product-card overflow-hidden">
-                  <div className={`relative ${viewMode === "list" ? "flex gap-4" : ""}`}>
-                    <div className={`relative overflow-hidden ${viewMode === "list" ? "w-48 h-48 flex-shrink-0" : "aspect-square"}`}>
-                      <img
-                        src={product.image}
-                        alt={product.name}
-                        className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                      />
-                      
-                      {/* Badges */}
-                      <div className="absolute top-3 left-3 flex flex-col gap-2">
-                        {product.isNew && <Badge>New</Badge>}
-                        {product.isBestseller && <Badge variant="secondary">Bestseller</Badge>}
-                        {!product.inStock && <Badge variant="destructive">Out of Stock</Badge>}
-                      </div>
-
-                      {/* Wishlist Button */}
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="absolute top-3 right-3 bg-white/80 hover:bg-white"
-                      >
-                        <Heart className="h-4 w-4" />
-                      </Button>
-                    </div>
-
-                    <CardContent className={`${viewMode === "list" ? "flex-1 p-4" : "p-4"}`}>
-                      {/* Rating */}
-                      <div className="flex items-center gap-1 mb-2">
-                        {[...Array(5)].map((_, i) => (
-                          <Star
-                            key={i}
-                            className={`h-4 w-4 ${
-                              i < Math.floor(product.rating) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
-                            }`}
-                          />
-                        ))}
-                        <span className="text-sm text-muted-foreground ml-1">
-                          {product.rating} ({product.reviews})
-                        </span>
-                      </div>
-
-                      {/* Product Info */}
-                      <h3 className="font-serif font-bold text-lg mb-1">{product.name}</h3>
-                      <p className="text-sm text-muted-foreground mb-2">
-                        {product.category} • {product.size}
-                      </p>
-
-                      {/* Price */}
-                      <div className="flex items-center gap-2 mb-4">
-                        <span className="text-lg font-bold">₹{product.price.toLocaleString()}</span>
-                        {product.originalPrice && (
-                          <span className="text-sm text-muted-foreground line-through">
-                            ₹{product.originalPrice.toLocaleString()}
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Actions */}
-                      <div className={`${viewMode === "list" ? "flex gap-2" : "space-y-2"}`}>
-                        <Button 
-                          className="btn-hero flex-1" 
-                          disabled={!product.inStock}
-                        >
-                          <ShoppingCart className="h-4 w-4 mr-2" />
-                          {product.inStock ? "Add to Cart" : "Out of Stock"}
-                        </Button>
-                        {viewMode === "list" && (
-                          <Button variant="outline">Quick View</Button>
-                        )}
-                      </div>
-                    </CardContent>
-                  </div>
-                </Card>
+                <ProductCard 
+                  key={product.id} 
+                  product={product} 
+                  viewMode={viewMode}
+                  showQuickView={true}
+                />
               ))}
             </div>
 
