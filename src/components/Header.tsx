@@ -12,7 +12,7 @@ const Header = () => {
   const navigation = [
     { name: "Shop", href: "/shop" },
     { name: "Custom Builder", href: "/custom-builder" },
-    { name: "Gallery Sets", href: "/gallery-sets" },
+    { name: "Collections", href: "/collections" },
     { name: "Bundles", href: "/bundles" },
     { name: "About", href: "/about" },
   ];
@@ -30,10 +30,10 @@ const Header = () => {
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <Link to="/" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-sm">F</span>
+              <div className="w-8 h-8 bg-cosmic-black rounded-lg flex items-center justify-center">
+                <span className="text-cosmic-white font-bold text-sm">K</span>
               </div>
-              <span className="font-serif text-xl font-bold text-foreground">FrameCraft</span>
+              <span className="font-bold text-xl text-foreground">Kaiga</span>
             </Link>
 
             {/* Desktop Navigation */}
@@ -72,7 +72,7 @@ const Header = () => {
 
               {/* User Account */}
               <Button variant="ghost" size="icon" asChild>
-                <Link to="/account">
+                <Link to="/login">
                   <User className="h-5 w-5" />
                   <span className="sr-only">Account</span>
                 </Link>
@@ -98,7 +98,7 @@ const Header = () => {
                   <ShoppingCart className="h-5 w-5" />
                   <Badge 
                     variant="secondary" 
-                    className="absolute -top-2 -right-2 h-5 w-5 p-0 text-xs bg-primary text-primary-foreground"
+                    className="absolute -top-2 -right-2 h-5 w-5 p-0 text-xs bg-cosmic-black text-cosmic-white"
                   >
                     3
                   </Badge>

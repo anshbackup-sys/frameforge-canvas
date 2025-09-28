@@ -8,55 +8,56 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* Premium Frame Brand Colors */
+    /* Cosmic Black & White Theme */
     --background: 0 0% 100%;
-    --foreground: 220 25% 6%;
+    --foreground: 0 0% 0%;
     
-    --card: 0 0% 100%;
-    --card-foreground: 220 25% 6%;
+    --card: 0 0% 98%;
+    --card-foreground: 0 0% 0%;
     
     --popover: 0 0% 100%;
-    --popover-foreground: 220 25% 6%;
+    --popover-foreground: 0 0% 0%;
     
-    /* Soft Gold Primary */
-    --primary: 38 40% 59%;
+    /* Cosmic White Primary */
+    --primary: 0 0% 0%;
     --primary-foreground: 0 0% 100%;
     
-    /* Pastel Accent Panels */
-    --secondary: 30 40% 92%;
-    --secondary-foreground: 220 25% 6%;
+    /* Cosmic Accents */
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 0%;
     
-    --muted: 30 40% 92%;
-    --muted-foreground: 220 8% 46%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 45%;
     
-    /* Pastel Purple Accent */
-    --accent: 255 100% 97%;
-    --accent-foreground: 220 25% 6%;
+    /* Cosmic Accent */
+    --accent: 0 0% 96%;
+    --accent-foreground: 0 0% 0%;
     
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
     
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 38 40% 59%;
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 0 0% 0%;
     
-    /* Custom Brand Tokens */
-    --soft-gold: 38 40% 59%;
-    --rich-black: 220 25% 6%;
-    --pastel-cream: 30 40% 92%;
-    --pastel-purple: 255 100% 97%;
+    /* Cosmic Brand Tokens */
+    --cosmic-black: 0 0% 0%;
+    --cosmic-white: 0 0% 100%;
+    --cosmic-gray: 0 0% 96%;
+    --cosmic-border: 0 0% 90%;
     
-    /* Gradients */
-    --gradient-hero: linear-gradient(135deg, hsl(var(--soft-gold)) 0%, hsl(var(--soft-gold) / 0.8) 100%);
-    --gradient-subtle: linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--pastel-cream)) 100%);
+    /* Cosmic Gradients */
+    --gradient-cosmic: linear-gradient(135deg, hsl(var(--cosmic-black)) 0%, hsl(var(--cosmic-black) / 0.8) 100%);
+    --gradient-space: linear-gradient(180deg, hsl(var(--cosmic-black)) 0%, hsl(var(--cosmic-black) / 0.7) 50%, hsl(var(--cosmic-white)) 100%);
+    --gradient-starfield: radial-gradient(ellipse at center, hsl(var(--cosmic-white) / 0.8) 0%, transparent 50%);
     
-    /* Shadows */
-    --shadow-elegant: 0 10px 30px -10px hsl(var(--soft-gold) / 0.2);
-    --shadow-soft: 0 4px 20px -4px hsl(var(--rich-black) / 0.1);
+    /* Cosmic Shadows */
+    --shadow-cosmic: 0 25px 50px -12px hsl(var(--cosmic-black) / 0.25);
+    --shadow-glow: 0 0 40px hsl(var(--cosmic-white) / 0.3);
     
-    /* Animations */
+    /* Cosmic Animations */
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    --transition-bounce: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    --transition-cosmic: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 
     --radius: 0.5rem;
 
@@ -78,39 +79,39 @@ All colors MUST be HSL.
   }
 
   .dark {
-    --background: 220 25% 6%;
-    --foreground: 0 0% 98%;
+    --background: 0 0% 0%;
+    --foreground: 0 0% 100%;
     
-    --card: 220 20% 8%;
-    --card-foreground: 0 0% 98%;
+    --card: 0 0% 2%;
+    --card-foreground: 0 0% 100%;
     
-    --popover: 220 20% 8%;
-    --popover-foreground: 0 0% 98%;
+    --popover: 0 0% 0%;
+    --popover-foreground: 0 0% 100%;
     
-    --primary: 38 40% 59%;
-    --primary-foreground: 220 25% 6%;
+    --primary: 0 0% 100%;
+    --primary-foreground: 0 0% 0%;
     
-    --secondary: 220 20% 14%;
-    --secondary-foreground: 0 0% 98%;
+    --secondary: 0 0% 4%;
+    --secondary-foreground: 0 0% 100%;
     
-    --muted: 220 20% 14%;
-    --muted-foreground: 220 8% 65%;
+    --muted: 0 0% 4%;
+    --muted-foreground: 0 0% 65%;
     
-    --accent: 220 20% 14%;
-    --accent-foreground: 0 0% 98%;
+    --accent: 0 0% 4%;
+    --accent-foreground: 0 0% 100%;
     
     --destructive: 0 63% 31%;
     --destructive-foreground: 0 0% 98%;
     
-    --border: 220 20% 14%;
-    --input: 220 20% 14%;
-    --ring: 38 40% 59%;
+    --border: 0 0% 10%;
+    --input: 0 0% 10%;
+    --ring: 0 0% 100%;
     
-    /* Dark mode adjustments */
-    --soft-gold: 38 40% 59%;
-    --rich-black: 0 0% 98%;
-    --pastel-cream: 220 20% 14%;
-    --pastel-purple: 220 20% 12%;
+    /* Dark cosmic mode adjustments */
+    --cosmic-black: 0 0% 100%;
+    --cosmic-white: 0 0% 0%;
+    --cosmic-gray: 0 0% 4%;
+    --cosmic-border: 0 0% 10%;
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;

@@ -8,6 +8,11 @@ import Shop from "./pages/Shop";
 import ProductDetail from "./pages/ProductDetail";
 import CustomBuilder from "./pages/CustomBuilder";
 import Cart from "./pages/Cart";
+import Profile from "./pages/Profile";
+import Login from "./pages/Login";
+import About from "./pages/About";
+import Bundles from "./pages/Bundles";
+import Collections from "./pages/Collections";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,6 +29,11 @@ const App = () => (
           <Route path="/product/:id" element={<ProductDetail />} />
           <Route path="/custom-builder" element={<CustomBuilder />} />
           <Route path="/cart" element={<Cart />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/bundles" element={<Bundles />} />
+          <Route path="/collections" element={<Collections />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

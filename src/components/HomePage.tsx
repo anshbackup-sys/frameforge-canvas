@@ -88,12 +88,12 @@ const HomePage = () => {
             {/* Hero Content */}
             <div className="space-y-8 animate-fade-up">
               <div className="space-y-4">
-                <h1 className="text-4xl md:text-5xl lg:text-6xl font-serif font-bold leading-tight">
-                  Turn Memories Into{" "}
-                  <span className="text-gradient">Masterpieces</span>
+                <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight animate-fade-up">
+                  Transform Memories Into{" "}
+                  <span className="bg-gradient-to-r from-cosmic-black to-cosmic-black/70 bg-clip-text text-transparent">Cosmic Masterpieces</span>
                 </h1>
-                <p className="text-xl text-muted-foreground leading-relaxed">
-                  Shop beautiful ready-made frames — or design your custom frame with real-time preview.
+                <p className="text-xl text-muted-foreground leading-relaxed animate-fade-up" style={{animationDelay: '0.2s'}}>
+                  Enter the cosmic realm of premium frames — where memories transcend into stellar art pieces.
                 </p>
               </div>
 
