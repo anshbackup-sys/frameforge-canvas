@@ -1,13 +1,33 @@
 import { useState } from "react";
-import { Search, User, Heart, ShoppingCart, Menu, X } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Search, User, Heart, ShoppingCart, Menu, X, LogOut, Package } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/contexts/AuthContext";
+import { useCart } from "@/contexts/CartContext";
+import { useWishlist } from "@/contexts/WishlistContext";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const Header = () => {
+  const navigate = useNavigate();
+  const { user, signOut } = useAuth();
+  const { itemCount: cartCount } = useCart();
+  const { itemCount: wishlistCount } = useWishlist();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/");
+  };
 
   const navigation = [
     { name: "Shop", href: "/shop" },
@@ -70,38 +90,70 @@ const Header = () => {
                 <Search className="h-5 w-5" />
               </Button>
 
-              {/* User Account */}
-              <Button variant="ghost" size="icon" asChild>
-                <Link to="/login">
-                  <User className="h-5 w-5" />
-                  <span className="sr-only">Account</span>
-                </Link>
-              </Button>
-
               {/* Wishlist */}
               <Button variant="ghost" size="icon" className="relative" asChild>
-                <Link to="/wishlist">
+                <Link to="/profile">
                   <Heart className="h-5 w-5" />
-                  <Badge 
-                    variant="destructive" 
-                    className="absolute -top-2 -right-2 h-5 w-5 p-0 text-xs"
-                  >
-                    2
-                  </Badge>
+                  {wishlistCount > 0 && (
+                    <Badge 
+                      variant="destructive" 
+                      className="absolute -top-2 -right-2 h-5 w-5 p-0 text-xs flex items-center justify-center"
+                    >
+                      {wishlistCount}
+                    </Badge>
+                  )}
                   <span className="sr-only">Wishlist</span>
                 </Link>
               </Button>
+
+              {/* User Account */}
+              {user ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon">
+                      <User className="h-5 w-5" />
+                      <span className="sr-only">Account</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => navigate("/profile")}>
+                      <User className="mr-2 h-4 w-4" />
+                      Profile
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate("/profile")}>
+                      <Package className="mr-2 h-4 w-4" />
+                      Orders
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleSignOut}>
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Sign Out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <Button variant="ghost" size="icon" asChild>
+                  <Link to="/login">
+                    <User className="h-5 w-5" />
+                    <span className="sr-only">Account</span>
+                  </Link>
+                </Button>
+              )}
 
               {/* Shopping Cart */}
               <Button variant="ghost" size="icon" className="relative" asChild>
                 <Link to="/cart">
                   <ShoppingCart className="h-5 w-5" />
-                  <Badge 
-                    variant="secondary" 
-                    className="absolute -top-2 -right-2 h-5 w-5 p-0 text-xs bg-cosmic-black text-cosmic-white"
-                  >
-                    3
-                  </Badge>
+                  {cartCount > 0 && (
+                    <Badge 
+                      variant="secondary" 
+                      className="absolute -top-2 -right-2 h-5 w-5 p-0 text-xs bg-cosmic-black text-cosmic-white flex items-center justify-center"
+                    >
+                      {cartCount}
+                    </Badge>
+                  )}
                   <span className="sr-only">Shopping cart</span>
                 </Link>
               </Button>

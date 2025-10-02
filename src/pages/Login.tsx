@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Mail, Lock, User, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -7,6 +7,9 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -19,32 +22,68 @@ const Login = () => {
     confirmPassword: "" 
   });
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      navigate("/");
+    }
+  }, [user, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
-      navigate("/profile");
-    }, 2000);
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email: loginData.email,
+      password: loginData.password,
+    });
+
+    if (error) {
+      toast.error(error.message);
+    } else {
+      toast.success("Welcome back!");
+      navigate("/");
+    }
+    setIsLoading(false);
   };
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    
     if (signupData.password !== signupData.confirmPassword) {
-      alert("Passwords don't match!");
+      toast.error("Passwords don't match!");
+      return;
+    }
+
+    if (signupData.password.length < 6) {
+      toast.error("Password must be at least 6 characters");
       return;
     }
     
     setIsLoading(true);
+
+    const redirectUrl = `${window.location.origin}/`;
     
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
-      navigate("/profile");
-    }, 2000);
+    const { error } = await supabase.auth.signUp({
+      email: signupData.email,
+      password: signupData.password,
+      options: {
+        emailRedirectTo: redirectUrl,
+        data: {
+          full_name: signupData.name,
+        }
+      }
+    });
+
+    if (error) {
+      toast.error(error.message);
+    } else {
+      toast.success("Account created! Check your email to verify.");
+      navigate("/");
+    }
+    setIsLoading(false);
   };
 
   return (
@@ -130,12 +169,6 @@ const Login = () => {
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between">
-                    <Link to="/forgot-password" className="text-sm text-muted-foreground hover:text-primary">
-                      Forgot password?
-                    </Link>
-                  </div>
-
                   <Button type="submit" className="w-full" disabled={isLoading}>
                     {isLoading ? "Signing in..." : "Sign In"}
                   </Button>
@@ -210,11 +243,12 @@ const Login = () => {
                       <Input
                         id="signup-password"
                         type={showPassword ? "text" : "password"}
-                        placeholder="Create a password"
+                        placeholder="Create a password (min 6 characters)"
                         className="pl-10 pr-10"
                         value={signupData.password}
                         onChange={(e) => setSignupData({...signupData, password: e.target.value})}
                         required
+                        minLength={6}
                       />
                       <Button
                         type="button"
@@ -251,11 +285,11 @@ const Login = () => {
 
                 <p className="text-xs text-center text-muted-foreground">
                   By creating an account, you agree to our{" "}
-                  <Link to="/terms" className="underline hover:text-primary">
+                  <Link to="/about" className="underline hover:text-primary">
                     Terms of Service
                   </Link>{" "}
                   and{" "}
-                  <Link to="/privacy" className="underline hover:text-primary">
+                  <Link to="/about" className="underline hover:text-primary">
                     Privacy Policy
                   </Link>
                 </p>

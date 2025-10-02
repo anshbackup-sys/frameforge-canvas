@@ -7,9 +7,9 @@ const Footer = () => {
       title: "Shop",
       links: [
         { name: "All Frames", href: "/shop" },
-        { name: "Wall Frames", href: "/shop/wall-frames" },
-        { name: "Tabletop Frames", href: "/shop/tabletop-frames" },
-        { name: "Gallery Sets", href: "/shop/gallery-sets" },
+        { name: "Wall Frames", href: "/shop" },
+        { name: "Tabletop Frames", href: "/shop" },
+        { name: "Gallery Sets", href: "/shop" },
         { name: "Custom Frames", href: "/custom-builder" },
         { name: "Bundles", href: "/bundles" },
       ],
@@ -17,43 +17,43 @@ const Footer = () => {
     help: {
       title: "Help & Support",
       links: [
-        { name: "Size Guide", href: "/size-guide" },
-        { name: "Shipping Info", href: "/shipping" },
-        { name: "Returns & Exchanges", href: "/returns" },
-        { name: "Care Instructions", href: "/care" },
-        { name: "Contact Us", href: "/contact" },
-        { name: "FAQ", href: "/faq" },
+        { name: "Size Guide", href: "/about" },
+        { name: "Shipping Info", href: "/about" },
+        { name: "Returns & Exchanges", href: "/about" },
+        { name: "Care Instructions", href: "/about" },
+        { name: "Contact Us", href: "/about" },
+        { name: "FAQ", href: "/about" },
       ],
     },
     company: {
       title: "Company",
       links: [
         { name: "About Us", href: "/about" },
-        { name: "Our Story", href: "/story" },
-        { name: "Craftsmanship", href: "/craftsmanship" },
-        { name: "Reviews", href: "/reviews" },
-        { name: "Press", href: "/press" },
-        { name: "Careers", href: "/careers" },
+        { name: "Our Story", href: "/about" },
+        { name: "Craftsmanship", href: "/about" },
+        { name: "Reviews", href: "/about" },
+        { name: "Press", href: "/about" },
+        { name: "Careers", href: "/about" },
       ],
     },
   };
 
   return (
-    <footer className="bg-rich-black text-white">
+    <footer className="bg-cosmic-black text-white">
       {/* Main Footer Content */}
       <div className="container-wide py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Brand Section */}
           <div className="lg:col-span-1">
             <Link to="/" className="flex items-center space-x-2 mb-6">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-sm">F</span>
+              <div className="w-8 h-8 bg-gradient-cosmic rounded-lg flex items-center justify-center shadow-cosmic">
+                <span className="text-cosmic-white font-bold text-sm">K</span>
               </div>
-              <span className="font-serif text-xl font-bold">FrameCraft</span>
+              <span className="font-bold text-xl">Kaiga</span>
             </Link>
             
             <p className="text-gray-300 mb-6 leading-relaxed">
-              Premium photo frames crafted with attention to detail. 
+              Premium photo frames crafted with cosmic precision. 
               Turn your memories into masterpieces with our beautiful collection.
             </p>
             
@@ -61,11 +61,11 @@ const Footer = () => {
             <div className="space-y-3">
               <div className="flex items-center gap-3">
                 <Phone className="h-4 w-4 text-primary" />
-                <span className="text-sm">1-800-FRAMES-1</span>
+                <span className="text-sm">+91 (555) 123-4567</span>
               </div>
               <div className="flex items-center gap-3">
                 <Mail className="h-4 w-4 text-primary" />
-                <span className="text-sm">hello@framecraft.com</span>
+                <span className="text-sm">hello@kaiga.com</span>
               </div>
             </div>
           </div>
@@ -73,7 +73,7 @@ const Footer = () => {
           {/* Footer Links */}
           {Object.entries(footerSections).map(([key, section]) => (
             <div key={key}>
-              <h3 className="font-serif font-bold text-lg mb-4">{section.title}</h3>
+              <h3 className="font-bold text-lg mb-4">{section.title}</h3>
               <ul className="space-y-3">
                 {section.links.map((link) => (
                   <li key={link.name}>
@@ -94,7 +94,7 @@ const Footer = () => {
         <div className="mt-12 pt-8 border-t border-gray-700">
           <div className="grid md:grid-cols-2 gap-8 items-center">
             <div>
-              <h3 className="font-serif font-bold text-xl mb-2">Stay Connected</h3>
+              <h3 className="font-bold text-xl mb-2">Stay Connected</h3>
               <p className="text-gray-300">Get styling tips, new arrivals, and exclusive offers.</p>
             </div>
             
@@ -154,17 +154,17 @@ const Footer = () => {
         <div className="container-wide py-6">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-sm text-gray-400">
-              © 2024 FrameCraft. All rights reserved.
+              © 2024 Kaiga. All rights reserved.
             </p>
             
             <div className="flex gap-6">
-              <Link to="/privacy" className="text-sm text-gray-400 hover:text-primary transition-colors">
+              <Link to="/about" className="text-sm text-gray-400 hover:text-primary transition-colors">
                 Privacy Policy
               </Link>
-              <Link to="/terms" className="text-sm text-gray-400 hover:text-primary transition-colors">
+              <Link to="/about" className="text-sm text-gray-400 hover:text-primary transition-colors">
                 Terms of Service
               </Link>
-              <Link to="/cookies" className="text-sm text-gray-400 hover:text-primary transition-colors">
+              <Link to="/about" className="text-sm text-gray-400 hover:text-primary transition-colors">
                 Cookie Policy
               </Link>
             </div>
