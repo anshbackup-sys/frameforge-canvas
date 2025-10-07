@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { Star, Heart, ShoppingCart, Eye } from "lucide-react";
+import { useCart } from "@/contexts/CartContext";
+import { useWishlist } from "@/contexts/WishlistContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -26,8 +28,10 @@ interface ProductCardProps {
 }
 
 const ProductCard = ({ product, viewMode = "grid", showQuickView = true }: ProductCardProps) => {
-  const [isWishlisted, setIsWishlisted] = useState(false);
   const [isQuickViewOpen, setIsQuickViewOpen] = useState(false);
+  const { addToCart } = useCart();
+  const { isInWishlist, toggleWishlist } = useWishlist();
+  const isWishlisted = isInWishlist(product.id.toString());
 
   const discount = product.originalPrice 
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
@@ -97,7 +101,11 @@ const ProductCard = ({ product, viewMode = "grid", showQuickView = true }: Produ
                       </div>
 
                       <div className="space-y-2">
-                        <Button className="btn-hero w-full" disabled={!product.inStock}>
+                        <Button 
+                          className="btn-hero w-full" 
+                          disabled={!product.inStock}
+                          onClick={() => addToCart(product.id.toString(), 1)}
+                        >
                           <ShoppingCart className="h-4 w-4 mr-2" />
                           {product.inStock ? "Add to Cart" : "Out of Stock"}
                         </Button>
@@ -130,7 +138,7 @@ const ProductCard = ({ product, viewMode = "grid", showQuickView = true }: Produ
             size="icon"
             variant="ghost"
             className="absolute top-3 right-3 bg-white/80 hover:bg-white"
-            onClick={() => setIsWishlisted(!isWishlisted)}
+            onClick={() => toggleWishlist(product.id.toString())}
           >
             <Heart className={`h-4 w-4 ${isWishlisted ? "fill-red-500 text-red-500" : ""}`} />
           </Button>
@@ -175,6 +183,7 @@ const ProductCard = ({ product, viewMode = "grid", showQuickView = true }: Produ
             <Button 
               className="btn-hero flex-1" 
               disabled={!product.inStock}
+              onClick={() => addToCart(product.id.toString(), 1)}
             >
               <ShoppingCart className="h-4 w-4 mr-2" />
               {product.inStock ? "Add to Cart" : "Out of Stock"}

@@ -8,30 +8,30 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* Cosmic Black & White Theme */
-    --background: 0 0% 100%;
-    --foreground: 0 0% 0%;
+    /* Cosmic Black & White Theme - Softer for better readability */
+    --background: 0 0% 98%;
+    --foreground: 0 0% 10%;
     
-    --card: 0 0% 98%;
-    --card-foreground: 0 0% 0%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 10%;
     
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 0%;
     
-    /* Cosmic White Primary */
-    --primary: 0 0% 0%;
-    --primary-foreground: 0 0% 100%;
+    /* Cosmic Black Primary */
+    --primary: 0 0% 10%;
+    --primary-foreground: 0 0% 98%;
     
     /* Cosmic Accents */
-    --secondary: 0 0% 96%;
-    --secondary-foreground: 0 0% 0%;
+    --secondary: 0 0% 95%;
+    --secondary-foreground: 0 0% 10%;
     
-    --muted: 0 0% 96%;
-    --muted-foreground: 0 0% 45%;
+    --muted: 0 0% 95%;
+    --muted-foreground: 0 0% 40%;
     
     /* Cosmic Accent */
-    --accent: 0 0% 96%;
-    --accent-foreground: 0 0% 0%;
+    --accent: 0 0% 15%;
+    --accent-foreground: 0 0% 98%;
     
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
@@ -41,10 +41,10 @@ All colors MUST be HSL.
     --ring: 0 0% 0%;
     
     /* Cosmic Brand Tokens */
-    --cosmic-black: 0 0% 0%;
-    --cosmic-white: 0 0% 100%;
-    --cosmic-gray: 0 0% 96%;
-    --cosmic-border: 0 0% 90%;
+    --cosmic-black: 0 0% 10%;
+    --cosmic-white: 0 0% 98%;
+    --cosmic-gray: 0 0% 95%;
+    --cosmic-border: 0 0% 88%;
     
     /* Cosmic Gradients */
     --gradient-cosmic: linear-gradient(135deg, hsl(var(--cosmic-black)) 0%, hsl(var(--cosmic-black) / 0.8) 100%);

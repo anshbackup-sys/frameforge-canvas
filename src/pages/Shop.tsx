@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Filter, Grid, List, Star, Heart, ShoppingCart } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -15,63 +16,42 @@ import metalFrameProduct from "@/assets/metal-frame-product.jpg";
 const Shop = () => {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [priceRange, setPriceRange] = useState([0, 5000]);
+  const [products, setProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const products = [
-    {
-      id: 1,
-      name: "Classic Oak Frame",
-      price: 1299,
-      originalPrice: 1599,
-      rating: 4.8,
-      reviews: 124,
-      image: woodFrameProduct,
-      category: "Wood",
-      size: "8x10",
-      inStock: true,
-      isNew: false,
-      isBestseller: true,
-    },
-    {
-      id: 2,
-      name: "Modern Metal Frame",
-      price: 999,
-      rating: 4.9,
-      reviews: 89,
-      image: metalFrameProduct,
-      category: "Metal",
-      size: "11x14",
-      inStock: true,
-      isNew: true,
-      isBestseller: false,
-    },
-    {
-      id: 3,
-      name: "Premium Gallery Frame",
-      price: 2199,
-      originalPrice: 2499,
-      rating: 5.0,
-      reviews: 67,
-      image: woodFrameProduct,
-      category: "Wood",
-      size: "16x20",
-      inStock: true,
-      isNew: false,
-      isBestseller: false,
-    },
-    {
-      id: 4,
-      name: "Minimalist Black Frame",
-      price: 799,
-      rating: 4.7,
-      reviews: 156,
-      image: metalFrameProduct,
-      category: "Metal",
-      size: "5x7",
-      inStock: false,
-      isNew: false,
-      isBestseller: true,
-    },
-  ];
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const fetchProducts = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching products:', error);
+    } else {
+      // Transform database products to match UI format
+      const formattedProducts = data?.map(product => ({
+        id: product.id,
+        name: product.name,
+        price: Number(product.price),
+        rating: Number(product.rating) || 4.5,
+        reviews: product.reviews_count || 0,
+        image: product.image_url || woodFrameProduct,
+        category: product.category || 'Frames',
+        size: product.size || '8x10',
+        inStock: (product.stock || 0) > 0,
+        isNew: product.featured,
+        isBestseller: product.featured,
+        isLowStock: (product.stock || 0) > 0 && (product.stock || 0) <= 5,
+      })) || [];
+      setProducts(formattedProducts);
+    }
+    setLoading(false);
+  };
 
   const filteredProducts = products.filter(
     (product) => product.price >= priceRange[0] && product.price <= priceRange[1]
@@ -227,16 +207,22 @@ const Shop = () => {
             </div>
 
             {/* Products Grid */}
-            <div className={viewMode === "grid" ? "gallery-grid" : "space-y-4"}>
-              {filteredProducts.map((product) => (
-                <ProductCard 
-                  key={product.id} 
-                  product={product} 
-                  viewMode={viewMode}
-                  showQuickView={true}
-                />
-              ))}
-            </div>
+            {loading ? (
+              <div className="text-center py-12">
+                <p className="text-muted-foreground">Loading products...</p>
+              </div>
+            ) : (
+              <div className={viewMode === "grid" ? "gallery-grid" : "space-y-4"}>
+                {filteredProducts.map((product) => (
+                  <ProductCard 
+                    key={product.id} 
+                    product={product} 
+                    viewMode={viewMode}
+                    showQuickView={true}
+                  />
+                ))}
+              </div>
+            )}
 
             {/* Load More */}
             <div className="text-center mt-12">

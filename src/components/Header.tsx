@@ -92,7 +92,7 @@ const Header = () => {
 
               {/* Wishlist */}
               <Button variant="ghost" size="icon" className="relative" asChild>
-                <Link to="/profile">
+                <Link to="/wishlist">
                   <Heart className="h-5 w-5" />
                   {wishlistCount > 0 && (
                     <Badge 

@@ -1,5 +1,6 @@
 import { ArrowRight, Star, Shield, Truck, RotateCcw, Check, Play } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useCart } from "@/contexts/CartContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +10,8 @@ import metalFrameProduct from "@/assets/metal-frame-product.jpg";
 import frameBuilderPreview from "@/assets/frame-builder-preview.jpg";
 
 const HomePage = () => {
+  const { addToCart } = useCart();
+
   const trustBadges = [
     { icon: Shield, text: "Premium Materials" },
     { icon: Star, text: "Expert Craftsmanship" },
@@ -281,7 +284,12 @@ const HomePage = () => {
                     )}
                   </div>
                   
-                  <Button className="w-full btn-hero">Add to Cart</Button>
+                  <Button 
+                    className="w-full btn-hero"
+                    onClick={() => addToCart(product.id.toString(), 1)}
+                  >
+                    Add to Cart
+                  </Button>
                 </CardContent>
               </Card>
             ))}
@@ -369,7 +377,9 @@ const HomePage = () => {
                     </span>
                   </div>
                   
-                  <Button className="w-full btn-hero">Add Bundle to Cart</Button>
+                  <Button className="w-full btn-hero">
+                    Add Bundle to Cart
+                  </Button>
                 </CardContent>
               </Card>
             ))}

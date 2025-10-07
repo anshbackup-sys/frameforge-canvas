@@ -174,25 +174,16 @@ const Profile = () => {
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Heart className="h-5 w-5" />
-                      Wishlist ({wishlistItems.length})
+                      Wishlist
                     </CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <div className="grid md:grid-cols-2 gap-4">
-                      {wishlistItems.map((item) => (
-                        <div key={item.id} className="flex gap-4 p-4 border rounded-lg">
-                          <img src={item.image} alt={item.name} className="w-20 h-20 object-cover rounded" />
-                          <div className="flex-1">
-                            <h3 className="font-medium mb-2">{item.name}</h3>
-                            <p className="text-lg font-bold mb-2">₹{item.price.toLocaleString()}</p>
-                            <div className="flex gap-2">
-                              <Button size="sm" className="flex-1">Add to Cart</Button>
-                              <Button variant="outline" size="sm">Remove</Button>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                  <CardContent className="text-center py-8">
+                    <p className="text-muted-foreground mb-4">
+                      Your wishlist has been moved to a dedicated page for a better experience.
+                    </p>
+                    <Button asChild>
+                      <Link to="/wishlist">View Wishlist</Link>
+                    </Button>
                   </CardContent>
                 </Card>
               </TabsContent>
