@@ -39,17 +39,17 @@ const Footer = () => {
   };
 
   return (
-    <footer className="bg-cosmic-black text-white">
+    <footer className="bg-[#1a1a1a] text-white">
       {/* Main Footer Content */}
       <div className="container-wide py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Brand Section */}
           <div className="lg:col-span-1">
             <Link to="/" className="flex items-center space-x-2 mb-6">
-              <div className="w-8 h-8 bg-gradient-cosmic rounded-lg flex items-center justify-center shadow-cosmic">
-                <span className="text-cosmic-white font-bold text-sm">K</span>
+              <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
+                <span className="text-[#1a1a1a] font-bold text-sm">K</span>
               </div>
-              <span className="font-bold text-xl">Kaiga</span>
+              <span className="font-bold text-xl text-white">Kaiga</span>
             </Link>
             
             <p className="text-gray-300 mb-6 leading-relaxed">
@@ -60,12 +60,12 @@ const Footer = () => {
             {/* Contact Info */}
             <div className="space-y-3">
               <div className="flex items-center gap-3">
-                <Phone className="h-4 w-4 text-primary" />
-                <span className="text-sm">+91 (555) 123-4567</span>
+                <Phone className="h-4 w-4 text-white" />
+                <span className="text-sm text-gray-300">+91 (555) 123-4567</span>
               </div>
               <div className="flex items-center gap-3">
-                <Mail className="h-4 w-4 text-primary" />
-                <span className="text-sm">hello@kaiga.com</span>
+                <Mail className="h-4 w-4 text-white" />
+                <span className="text-sm text-gray-300">hello@kaiga.com</span>
               </div>
             </div>
           </div>
@@ -104,7 +104,7 @@ const Footer = () => {
                 placeholder="Enter your email"
                 className="flex-1 px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-primary focus:outline-none"
               />
-              <button className="px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors">
+              <button className="px-6 py-3 bg-white text-[#1a1a1a] rounded-lg font-medium hover:bg-gray-100 transition-colors">
                 Subscribe
               </button>
             </div>
@@ -118,13 +118,13 @@ const Footer = () => {
             <div className="flex items-center gap-4">
               <span className="text-sm text-gray-300">Follow us:</span>
               <div className="flex gap-3">
-                <a href="#" className="p-2 bg-gray-800 rounded-lg hover:bg-primary transition-colors">
+                <a href="#" className="p-2 bg-gray-800 rounded-lg hover:bg-white hover:text-[#1a1a1a] transition-colors">
                   <Facebook className="h-4 w-4" />
                 </a>
-                <a href="#" className="p-2 bg-gray-800 rounded-lg hover:bg-primary transition-colors">
+                <a href="#" className="p-2 bg-gray-800 rounded-lg hover:bg-white hover:text-[#1a1a1a] transition-colors">
                   <Instagram className="h-4 w-4" />
                 </a>
-                <a href="#" className="p-2 bg-gray-800 rounded-lg hover:bg-primary transition-colors">
+                <a href="#" className="p-2 bg-gray-800 rounded-lg hover:bg-white hover:text-[#1a1a1a] transition-colors">
                   <Twitter className="h-4 w-4" />
                 </a>
               </div>
@@ -158,13 +158,13 @@ const Footer = () => {
             </p>
             
             <div className="flex gap-6">
-              <Link to="/about" className="text-sm text-gray-400 hover:text-primary transition-colors">
+              <Link to="/about" className="text-sm text-gray-400 hover:text-white transition-colors">
                 Privacy Policy
               </Link>
-              <Link to="/about" className="text-sm text-gray-400 hover:text-primary transition-colors">
+              <Link to="/about" className="text-sm text-gray-400 hover:text-white transition-colors">
                 Terms of Service
               </Link>
-              <Link to="/about" className="text-sm text-gray-400 hover:text-primary transition-colors">
+              <Link to="/about" className="text-sm text-gray-400 hover:text-white transition-colors">
                 Cookie Policy
               </Link>
             </div>

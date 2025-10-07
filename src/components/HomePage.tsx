@@ -85,15 +85,15 @@ const HomePage = () => {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-background via-pastel-cream/30 to-pastel-purple/20">
+      <section className="relative overflow-hidden bg-background">
         <div className="container-wide">
           <div className="grid lg:grid-cols-2 gap-12 items-center min-h-[600px] py-12">
             {/* Hero Content */}
             <div className="space-y-8 animate-fade-up">
               <div className="space-y-4">
-                <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight animate-fade-up">
+                <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight animate-fade-up text-foreground">
                   Transform Memories Into{" "}
-                  <span className="bg-gradient-to-r from-cosmic-black to-cosmic-black/70 bg-clip-text text-transparent">Cosmic Masterpieces</span>
+                  <span className="text-foreground">Cosmic Masterpieces</span>
                 </h1>
                 <p className="text-xl text-muted-foreground leading-relaxed animate-fade-up" style={{animationDelay: '0.2s'}}>
                   Enter the cosmic realm of premium frames — where memories transcend into stellar art pieces.
@@ -115,7 +115,7 @@ const HomePage = () => {
 
               {/* Quick Video Link */}
               <div className="flex items-center gap-4">
-                <Button variant="ghost" size="sm" className="flex items-center gap-2 text-muted-foreground hover:text-primary">
+                <Button variant="ghost" size="sm" className="flex items-center gap-2 text-muted-foreground hover:text-foreground">
                   <Play className="h-4 w-4" />
                   How it's made (45s)
                 </Button>
@@ -139,10 +139,10 @@ const HomePage = () => {
               </div>
               
               {/* Floating Trust Badge */}
-              <div className="absolute -bottom-6 -left-6 bg-background p-4 rounded-xl shadow-lg border">
+              <div className="absolute -bottom-6 -left-6 bg-background p-4 rounded-xl shadow-lg border border-border">
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                  <span className="text-sm font-medium">1,000+ Happy Customers</span>
+                  <span className="text-sm font-medium text-foreground">1,000+ Happy Customers</span>
                 </div>
               </div>
             </div>
@@ -151,13 +151,13 @@ const HomePage = () => {
       </section>
 
       {/* Trust Badges */}
-      <section className="py-12 bg-muted/30">
+      <section className="py-12 bg-muted/50">
         <div className="container-wide">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {trustBadges.map((badge, index) => (
               <div key={index} className="trust-badge justify-center text-center">
-                <badge.icon className="h-8 w-8 text-primary mb-2" />
-                <span className="font-medium">{badge.text}</span>
+                <badge.icon className="h-8 w-8 text-foreground mb-2" />
+                <span className="font-medium text-foreground">{badge.text}</span>
               </div>
             ))}
           </div>
@@ -298,11 +298,11 @@ const HomePage = () => {
       </section>
 
       {/* Custom Frame Builder Promo */}
-      <section className="py-16 bg-gradient-to-r from-primary/10 to-primary/5">
+      <section className="py-16 bg-muted/50">
         <div className="container-wide">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
-              <h2 className="text-3xl font-serif font-bold mb-4">
+              <h2 className="text-3xl font-serif font-bold mb-4 text-foreground">
                 Design Your Perfect Custom Frame
               </h2>
               <p className="text-muted-foreground mb-6 text-lg">
@@ -312,16 +312,16 @@ const HomePage = () => {
               
               <div className="space-y-3 mb-8">
                 <div className="flex items-center gap-2">
-                  <Check className="h-5 w-5 text-primary" />
-                  <span>Real-time preview with your photo</span>
+                  <Check className="h-5 w-5 text-foreground" />
+                  <span className="text-foreground">Real-time preview with your photo</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Check className="h-5 w-5 text-primary" />
-                  <span>Premium materials and finishes</span>
+                  <Check className="h-5 w-5 text-foreground" />
+                  <span className="text-foreground">Premium materials and finishes</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Check className="h-5 w-5 text-primary" />
-                  <span>Professional mounting and backing</span>
+                  <Check className="h-5 w-5 text-foreground" />
+                  <span className="text-foreground">Professional mounting and backing</span>
                 </div>
               </div>
               
@@ -361,7 +361,7 @@ const HomePage = () => {
                     alt={bundle.title}
                     className="w-full h-64 object-cover"
                   />
-                  <Badge className="absolute top-4 right-4 bg-primary text-primary-foreground">
+                  <Badge className="absolute top-4 right-4 bg-[#1a1a1a] text-white">
                     Save {bundle.savings}
                   </Badge>
                 </div>
@@ -388,12 +388,12 @@ const HomePage = () => {
       </section>
 
       {/* Newsletter Signup */}
-      <section className="py-16 bg-primary text-primary-foreground">
+      <section className="py-16 bg-[#1a1a1a] text-white">
         <div className="container-wide text-center">
           <h2 className="text-3xl font-serif font-bold mb-4">
             Get 10% Off Your First Order
           </h2>
-          <p className="text-primary-foreground/80 mb-8 text-lg">
+          <p className="text-white/80 mb-8 text-lg">
             Plus styling tips and exclusive offers delivered to your inbox
           </p>
           
@@ -401,14 +401,14 @@ const HomePage = () => {
             <input
               type="email"
               placeholder="Enter your email"
-              className="flex-1 px-4 py-3 rounded-lg text-foreground"
+              className="flex-1 px-4 py-3 rounded-lg text-[#1a1a1a] bg-white"
             />
-            <Button variant="secondary" size="lg">
+            <Button variant="secondary" size="lg" className="bg-white text-[#1a1a1a] hover:bg-gray-100 border-0">
               Get 10% Off
             </Button>
           </div>
           
-          <p className="text-sm text-primary-foreground/60 mt-4">
+          <p className="text-sm text-white/60 mt-4">
             By subscribing, you agree to our Privacy Policy. Unsubscribe anytime.
           </p>
         </div>

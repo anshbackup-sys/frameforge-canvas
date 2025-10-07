@@ -140,11 +140,19 @@ All colors MUST be HSL.
 @layer components {
   /* Button Variants */
   .btn-hero {
-    @apply bg-gradient-to-r from-primary to-primary/90 text-primary-foreground shadow-[var(--shadow-elegant)] hover:shadow-[var(--shadow-elegant)] hover:scale-105 transition-[var(--transition-bounce)] font-medium px-8 py-4 rounded-lg;
+    background-color: hsl(var(--cosmic-black));
+    color: hsl(var(--cosmic-white));
+    @apply shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 font-medium rounded-lg;
   }
   
   .btn-secondary {
-    @apply border-2 border-primary text-primary bg-transparent hover:bg-primary hover:text-primary-foreground transition-[var(--transition-smooth)] font-medium px-8 py-4 rounded-lg;
+    border: 2px solid hsl(var(--cosmic-black));
+    color: hsl(var(--cosmic-black));
+    @apply bg-transparent transition-all duration-300 font-medium rounded-lg;
+  }
+  .btn-secondary:hover {
+    background-color: hsl(var(--cosmic-black));
+    color: hsl(var(--cosmic-white));
   }
   
   /* Trust Badge Styles */
