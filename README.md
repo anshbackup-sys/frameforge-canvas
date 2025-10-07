@@ -1,8 +1,37 @@
-# Welcome to your Lovable project
+# Kaiga - Premium Frame E-Commerce Platform
+
+A modern e-commerce platform for premium photo frames with a comprehensive admin panel.
 
 ## Project info
 
 **URL**: https://lovable.dev/projects/3d61e044-0635-42b9-ba99-4eccb49342ba
+
+## Admin Panel
+
+This project includes a fully functional admin panel for managing products, orders, and users.
+
+### Quick Access
+- **Admin Login**: Navigate to `/admin/login`
+- **Documentation**: See [ADMIN_QUICK_START.md](./ADMIN_QUICK_START.md) for setup guide
+
+### Admin Features
+- Dashboard with real-time statistics
+- Complete product management (CRUD operations)
+- Order management with status updates
+- User management with role assignment
+- Secure authentication with role-based access control
+
+### Getting Started with Admin
+1. Create a user account via the signup page
+2. Grant admin role using the SQL script in [CREATE_ADMIN_USER.sql](./CREATE_ADMIN_USER.sql)
+3. Login at `/admin/login`
+4. Start managing your store!
+
+### Admin Documentation
+- [ADMIN_QUICK_START.md](./ADMIN_QUICK_START.md) - Quick start guide
+- [ADMIN_PANEL_GUIDE.md](./ADMIN_PANEL_GUIDE.md) - Complete user guide
+- [ADMIN_ROUTES.md](./ADMIN_ROUTES.md) - Route reference
+- [ADMIN_IMPLEMENTATION_SUMMARY.md](./ADMIN_IMPLEMENTATION_SUMMARY.md) - Technical details
 
 ## How can I edit this code?
 
