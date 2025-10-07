@@ -36,9 +36,9 @@ const App = () => (
                 <Route path="/product/:id" element={<ProductDetail />} />
                 <Route path="/custom-builder" element={<CustomBuilder />} />
                 <Route path="/cart" element={<Cart />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/wishlist" element={<Wishlist />} />
-          <Route path="/login" element={<Login />} />
+                <Route path="/profile" element={<Profile />} />
+                <Route path="/wishlist" element={<Wishlist />} />
+                <Route path="/login" element={<Login />} />
                 <Route path="/about" element={<About />} />
                 <Route path="/bundles" element={<Bundles />} />
                 <Route path="/collections" element={<Collections />} />
