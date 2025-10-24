@@ -85,6 +85,33 @@ export type Database = {
           },
         ]
       }
+      collections: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          featured: boolean | null
+          id: string
+          image_url: string | null
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          featured?: boolean | null
+          id?: string
+          image_url?: string | null
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          featured?: boolean | null
+          id?: string
+          image_url?: string | null
+          name?: string
+        }
+        Relationships: []
+      }
       order_items: {
         Row: {
           created_at: string | null
@@ -160,6 +187,7 @@ export type Database = {
       products: {
         Row: {
           category: string | null
+          collection_id: string | null
           color: string | null
           created_at: string | null
           description: string | null
@@ -178,6 +206,7 @@ export type Database = {
         }
         Insert: {
           category?: string | null
+          collection_id?: string | null
           color?: string | null
           created_at?: string | null
           description?: string | null
@@ -196,6 +225,7 @@ export type Database = {
         }
         Update: {
           category?: string | null
+          collection_id?: string | null
           color?: string | null
           created_at?: string | null
           description?: string | null
@@ -212,7 +242,15 @@ export type Database = {
           size?: string | null
           stock?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "products_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "collections"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -293,10 +331,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      generate_order_number: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      generate_order_number: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

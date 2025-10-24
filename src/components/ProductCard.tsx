@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 
 interface ProductCardProps {
   product: {
-    id: number;
+    id: number | string;
     name: string;
     price: number;
     originalPrice?: number;

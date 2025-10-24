@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Filter, Grid, List, Star } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Grid, List } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -7,159 +7,93 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ProductCard from "@/components/ProductCard";
-import woodFrameProduct from "@/assets/wood-frame-product.jpg";
-import metalFrameProduct from "@/assets/metal-frame-product.jpg";
-import heroImage from "@/assets/hero-gallery-wall.jpg";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+
+interface Collection {
+  id: string;
+  name: string;
+  description: string;
+  image_url: string;
+  featured: boolean;
+  product_count?: number;
+}
+
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+  rating: number | null;
+  reviews_count: number;
+  image_url: string;
+  category: string;
+  size: string;
+  collection_id: string | null;
+  stock: number;
+  featured: boolean;
+}
 
 const Collections = () => {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [sortBy, setSortBy] = useState("popular");
   const [selectedCollection, setSelectedCollection] = useState("all");
+  const [collections, setCollections] = useState<Collection[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const collections = [
-    {
-      id: "cosmic-minimalist",
-      name: "Cosmic Minimalist",
-      description: "Clean lines meet cosmic aesthetics",
-      image: metalFrameProduct,
-      count: 24,
-      featured: true
-    },
-    {
-      id: "stellar-classic",
-      name: "Stellar Classic",
-      description: "Timeless elegance with cosmic touch",
-      image: woodFrameProduct,
-      count: 18,
-      featured: true
-    },
-    {
-      id: "nebula-modern",
-      name: "Nebula Modern",
-      description: "Contemporary cosmic designs",
-      image: heroImage,
-      count: 32,
-      featured: true
-    },
-    {
-      id: "galaxy-vintage",
-      name: "Galaxy Vintage",
-      description: "Retro meets cosmic sophistication",
-      image: woodFrameProduct,
-      count: 15,
-      featured: false
-    },
-    {
-      id: "space-luxury",
-      name: "Space Luxury",
-      description: "Premium cosmic materials",
-      image: metalFrameProduct,
-      count: 12,
-      featured: false
-    },
-    {
-      id: "cosmic-art",
-      name: "Cosmic Art",
-      description: "Artistic cosmic expressions",
-      image: heroImage,
-      count: 28,
-      featured: false
-    }
-  ];
+  useEffect(() => {
+    fetchCollections();
+    fetchProducts();
+  }, []);
 
-  const products = [
-    {
-      id: 1,
-      name: "Void Black Minimalist",
-      price: 1299,
-      originalPrice: 1599,
-      rating: 4.8,
-      reviews: 124,
-      image: metalFrameProduct,
-      category: "Metal",
-      size: "8x10",
-      collection: "cosmic-minimalist",
-      inStock: true,
-      isNew: false,
-      isBestseller: true
-    },
-    {
-      id: 2,
-      name: "Stellar Wood Classic",
-      price: 999,
-      rating: 4.9,
-      reviews: 89,
-      image: woodFrameProduct,
-      category: "Wood",
-      size: "8x10",
-      collection: "stellar-classic",
-      inStock: true,
-      isNew: true,
-      isBestseller: false
-    },
-    {
-      id: 3,
-      name: "Nebula Carbon Frame",
-      price: 2199,
-      originalPrice: 2499,
-      rating: 5.0,
-      reviews: 67,
-      image: metalFrameProduct,
-      category: "Carbon",
-      size: "11x14",
-      collection: "nebula-modern",
-      inStock: true,
-      isNew: false,
-      isBestseller: false
-    },
-    {
-      id: 4,
-      name: "Galaxy Vintage Oak",
-      price: 1799,
-      rating: 4.7,
-      reviews: 156,
-      image: woodFrameProduct,
-      category: "Wood",
-      size: "16x20",
-      collection: "galaxy-vintage",
-      inStock: false,
-      isNew: false,
-      isBestseller: true
-    },
-    {
-      id: 5,
-      name: "Cosmic Titanium Luxury",
-      price: 3499,
-      originalPrice: 3999,
-      rating: 4.9,
-      reviews: 43,
-      image: metalFrameProduct,
-      category: "Titanium",
-      size: "8x10",
-      collection: "space-luxury",
-      inStock: true,
-      isNew: true,
-      isBestseller: false
-    },
-    {
-      id: 6,
-      name: "Starfield Art Frame",
-      price: 1899,
-      rating: 4.8,
-      reviews: 91,
-      image: heroImage,
-      category: "Composite",
-      size: "12x16",
-      collection: "cosmic-art",
-      inStock: true,
-      isNew: false,
-      isBestseller: false
+  const fetchCollections = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('collections')
+        .select('*')
+        .order('featured', { ascending: false });
+
+      if (error) throw error;
+
+      // Get product counts for each collection
+      const collectionsWithCounts = await Promise.all(
+        (data || []).map(async (collection) => {
+          const { count } = await supabase
+            .from('products')
+            .select('*', { count: 'exact', head: true })
+            .eq('collection_id', collection.id);
+          
+          return { ...collection, product_count: count || 0 };
+        })
+      );
+
+      setCollections(collectionsWithCounts);
+    } catch (error) {
+      console.error('Error fetching collections:', error);
+      toast.error('Failed to load collections');
     }
-  ];
+  };
+
+  const fetchProducts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setProducts(data || []);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+      toast.error('Failed to load products');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredProducts = selectedCollection === "all" 
     ? products 
-    : products.filter(product => product.collection === selectedCollection);
+    : products.filter(product => product.collection_id === selectedCollection);
 
   return (
     <div className="min-h-screen">
@@ -193,28 +127,40 @@ const Collections = () => {
           </div>
 
           <div className="grid md:grid-cols-3 gap-8 mb-12">
-            {collections.filter(c => c.featured).map((collection) => (
-              <Card 
-                key={collection.id} 
-                className="overflow-hidden border-cosmic-border hover:shadow-cosmic transition-all duration-300 hover:-translate-y-1 cursor-pointer"
-                onClick={() => setSelectedCollection(collection.id)}
-              >
-                <div className="aspect-video overflow-hidden">
-                  <img 
-                    src={collection.image} 
-                    alt={collection.name}
-                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                  />
-                </div>
-                <CardContent className="p-6">
-                  <div className="flex justify-between items-start mb-2">
-                    <h3 className="font-bold text-lg">{collection.name}</h3>
-                    <Badge variant="outline">{collection.count} items</Badge>
+            {loading ? (
+              [1, 2, 3].map((i) => (
+                <Card key={i} className="overflow-hidden">
+                  <div className="aspect-video bg-cosmic-gray/50 animate-pulse" />
+                  <CardContent className="p-6">
+                    <div className="h-6 bg-cosmic-gray/50 rounded animate-pulse mb-2" />
+                    <div className="h-4 bg-cosmic-gray/50 rounded animate-pulse" />
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              collections.filter(c => c.featured).map((collection) => (
+                <Card 
+                  key={collection.id} 
+                  className="overflow-hidden border-cosmic-border hover:shadow-cosmic transition-all duration-300 hover:-translate-y-1 cursor-pointer"
+                  onClick={() => setSelectedCollection(collection.id)}
+                >
+                  <div className="aspect-video overflow-hidden">
+                    <img 
+                      src={collection.image_url || '/placeholder.svg'} 
+                      alt={collection.name}
+                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                    />
                   </div>
-                  <p className="text-muted-foreground text-sm">{collection.description}</p>
-                </CardContent>
-              </Card>
-            ))}
+                  <CardContent className="p-6">
+                    <div className="flex justify-between items-start mb-2">
+                      <h3 className="font-bold text-lg">{collection.name}</h3>
+                      <Badge variant="outline">{collection.product_count || 0} items</Badge>
+                    </div>
+                    <p className="text-muted-foreground text-sm">{collection.description}</p>
+                  </CardContent>
+                </Card>
+              ))
+            )}
           </div>
         </div>
       </section>
@@ -288,14 +234,14 @@ const Collections = () => {
               >
                 <div className="aspect-square overflow-hidden">
                   <img 
-                    src={collection.image} 
+                    src={collection.image_url || '/placeholder.svg'} 
                     alt={collection.name}
                     className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                   />
                 </div>
                 <CardContent className="p-4">
                   <h3 className="font-medium text-sm mb-1">{collection.name}</h3>
-                  <p className="text-xs text-muted-foreground">{collection.count} items</p>
+                  <p className="text-xs text-muted-foreground">{collection.product_count || 0} items</p>
                 </CardContent>
               </Card>
             ))}
@@ -316,13 +262,36 @@ const Collections = () => {
           </div>
 
           <div className={viewMode === "grid" ? "grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" : "space-y-4"}>
-            {filteredProducts.map((product) => (
-              <ProductCard 
-                key={product.id} 
-                product={product} 
-                viewMode={viewMode}
-              />
-            ))}
+            {loading ? (
+              [1, 2, 3, 4].map((i) => (
+                <Card key={i} className="overflow-hidden">
+                  <div className="aspect-square bg-cosmic-gray/50 animate-pulse" />
+                  <CardContent className="p-4">
+                    <div className="h-4 bg-cosmic-gray/50 rounded animate-pulse mb-2" />
+                    <div className="h-6 bg-cosmic-gray/50 rounded animate-pulse" />
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              filteredProducts.map((product) => (
+                <ProductCard 
+                  key={product.id} 
+                  product={{
+                    id: product.id,
+                    name: product.name,
+                    price: product.price,
+                    rating: product.rating || 0,
+                    reviews: product.reviews_count,
+                    image: product.image_url,
+                    category: product.category,
+                    size: product.size,
+                    inStock: product.stock > 0,
+                    isBestseller: product.featured
+                  }} 
+                  viewMode={viewMode}
+                />
+              ))
+            )}
           </div>
 
           {filteredProducts.length === 0 && (
