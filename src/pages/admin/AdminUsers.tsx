@@ -39,32 +39,35 @@ const AdminUsers = () => {
 
   const fetchUsers = async () => {
     try {
-      const { data: authData } = await supabase.auth.admin.listUsers();
+      // Fetch all profiles with their roles
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, full_name, created_at');
 
-      if (!authData?.users) {
+      if (profilesError) throw profilesError;
+
+      if (!profilesData || profilesData.length === 0) {
         setUsers([]);
+        setLoading(false);
         return;
       }
 
-      const userIds = authData.users.map(u => u.id);
-
-      const { data: profilesData } = await supabase
-        .from('profiles')
-        .select('id, full_name')
-        .in('id', userIds);
-
+      const userIds = profilesData.map(p => p.id);
+      
       const { data: rolesData } = await supabase
         .from('user_roles')
         .select('user_id, role')
         .in('user_id', userIds);
 
-      const usersWithDetails = authData.users.map(user => ({
-        id: user.id,
-        email: user.email || '',
-        created_at: user.created_at,
-        profiles: profilesData?.find(p => p.id === user.id),
-        user_roles: rolesData?.filter(r => r.user_id === user.id).map(r => ({ role: r.role })) || [],
-      }));
+      const usersWithDetails = profilesData.map(profile => {
+        return {
+          id: profile.id,
+          email: 'Email not available', // Email requires admin API access
+          created_at: profile.created_at,
+          profiles: { full_name: profile.full_name },
+          user_roles: rolesData?.filter(r => r.user_id === profile.id).map(r => ({ role: r.role })) || [],
+        };
+      });
 
       setUsers(usersWithDetails);
     } catch (error) {

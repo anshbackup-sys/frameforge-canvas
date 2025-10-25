@@ -18,6 +18,7 @@ import Login from "./pages/Login";
 import About from "./pages/About";
 import Bundles from "./pages/Bundles";
 import Collections from "./pages/Collections";
+import CollectionDetail from "./pages/CollectionDetail";
 import NotFound from "./pages/NotFound";
 import AdminLogin from "./pages/admin/AdminLogin";
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -57,6 +58,7 @@ const App = () => (
                   <Route path="/about" element={<About />} />
                   <Route path="/bundles" element={<Bundles />} />
                   <Route path="/collections" element={<Collections />} />
+                  <Route path="/collection/:id" element={<CollectionDetail />} />
 
                   <Route path="/admin/login" element={<AdminLogin />} />
                   <Route

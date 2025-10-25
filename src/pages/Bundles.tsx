@@ -1,93 +1,97 @@
+import { useState, useEffect } from "react";
 import { ShoppingCart, Star, Gift, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import heroImage from "@/assets/hero-gallery-wall.jpg";
-import woodFrameProduct from "@/assets/wood-frame-product.jpg";
-import metalFrameProduct from "@/assets/metal-frame-product.jpg";
+import { supabase } from "@/integrations/supabase/client";
+import { useCart } from "@/contexts/CartContext";
+import { toast } from "sonner";
+
+interface Bundle {
+  id: string;
+  name: string;
+  description: string;
+  image_url: string;
+  discount_percentage: number;
+  featured: boolean;
+  products?: Array<{
+    id: string;
+    name: string;
+    price: number;
+  }>;
+  total_price?: number;
+  discounted_price?: number;
+}
 
 const Bundles = () => {
-  const featuredBundles = [
-    {
-      id: 1,
-      title: "Cosmic Gallery Wall",
-      subtitle: "Complete cosmic collection",
-      description: "Transform your space with this curated set of 7 cosmic frames in varying sizes",
-      image: heroImage,
-      originalPrice: 8999,
-      bundlePrice: 6999,
-      savings: 22,
-      popular: true,
-      frames: ["8x10", "5x7", "11x14", "4x6", "16x20", "8x10", "5x7"],
-      rating: 4.9,
-      reviews: 156
-    },
-    {
-      id: 2,
-      title: "Starfield Trio",
-      subtitle: "Perfect harmony set",
-      description: "Three perfectly matched cosmic frames for a cohesive display",
-      image: woodFrameProduct,
-      originalPrice: 4499,
-      bundlePrice: 3599,
-      savings: 20,
-      popular: false,
-      frames: ["8x10", "8x10", "8x10"],
-      rating: 4.8,
-      reviews: 89
-    },
-    {
-      id: 3,
-      title: "Cosmic Memories Bundle",
-      subtitle: "Wedding & special occasions",
-      description: "Elegant collection designed for your most precious memories",
-      image: metalFrameProduct,
-      originalPrice: 6999,
-      bundlePrice: 5599,
-      savings: 20,
-      popular: false,
-      frames: ["16x20", "11x14", "8x10", "5x7"],
-      rating: 5.0,
-      reviews: 67
-    }
-  ];
+  const { addToCart } = useCart();
+  const [bundles, setBundles] = useState<Bundle[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const occasionBundles = [
-    {
-      title: "Newborn Collection",
-      description: "Celebrate new arrivals with gentle cosmic frames",
-      price: 2999,
-      originalPrice: 3799,
-      image: woodFrameProduct,
-      frames: 4
-    },
-    {
-      title: "Anniversary Special",
-      description: "Mark milestones with our romantic cosmic collection",
-      price: 4499,
-      originalPrice: 5599,
-      image: metalFrameProduct,
-      frames: 5
-    },
-    {
-      title: "Graduation Pride",
-      description: "Showcase achievements with professional cosmic frames",
-      price: 3499,
-      originalPrice: 4299,
-      image: heroImage,
-      frames: 3
-    },
-    {
-      title: "Family Heritage",
-      description: "Multi-generation display with varied cosmic sizes",
-      price: 7999,
-      originalPrice: 9999,
-      image: woodFrameProduct,
-      frames: 8
+  useEffect(() => {
+    fetchBundles();
+  }, []);
+
+  const fetchBundles = async () => {
+    try {
+      const { data: bundlesData, error } = await supabase
+        .from('bundles')
+        .select(`
+          *,
+          bundle_products(
+            quantity,
+            product:products(
+              id,
+              name,
+              price
+            )
+          )
+        `)
+        .order('featured', { ascending: false });
+
+      if (error) throw error;
+
+      const bundlesWithCalculations = (bundlesData || []).map(bundle => {
+        const products = bundle.bundle_products?.map((bp: any) => bp.product).filter(Boolean) || [];
+        const total_price = products.reduce((sum: number, p: any) => sum + (p.price || 0), 0);
+        const discounted_price = total_price * (1 - (bundle.discount_percentage || 0) / 100);
+
+        return {
+          ...bundle,
+          products,
+          total_price,
+          discounted_price
+        };
+      });
+
+      setBundles(bundlesWithCalculations);
+    } catch (error) {
+      console.error('Error fetching bundles:', error);
+      toast.error('Failed to load bundles');
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
+
+  const handleAddToCart = async (bundle: Bundle) => {
+    if (!bundle.products || bundle.products.length === 0) {
+      toast.error('This bundle has no products');
+      return;
+    }
+
+    try {
+      for (const product of bundle.products) {
+        await addToCart(product.id, 1);
+      }
+      toast.success(`Added ${bundle.name} to cart`);
+    } catch (error) {
+      console.error('Error adding bundle to cart:', error);
+    }
+  };
+
+  const featuredBundles = bundles.filter(b => b.featured);
 
   return (
     <div className="min-h-screen">
@@ -95,7 +99,6 @@ const Bundles = () => {
       
       {/* Hero Section */}
       <section className="relative py-20 bg-gradient-to-br from-cosmic-black via-background to-cosmic-gray overflow-hidden">
-        {/* Cosmic Background Effects */}
         <div className="absolute inset-0">
           <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-cosmic-white/10 rounded-full blur-3xl animate-pulse" />
           <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-cosmic-white/5 rounded-full blur-3xl animate-pulse delay-1000" />
@@ -138,125 +141,167 @@ const Bundles = () => {
           </div>
 
           <div className="space-y-8">
-            {featuredBundles.map((bundle, index) => (
-              <Card key={bundle.id} className="overflow-hidden border-cosmic-border hover:shadow-cosmic transition-all duration-300">
-                <div className={`grid lg:grid-cols-2 gap-8 ${index % 2 === 1 ? 'lg:flex-row-reverse' : ''}`}>
-                  <div className={`relative ${index % 2 === 1 ? 'lg:order-2' : ''}`}>
-                    <img 
-                      src={bundle.image} 
-                      alt={bundle.title}
-                      className="w-full h-80 lg:h-full object-cover"
-                    />
-                    {bundle.popular && (
-                      <Badge className="absolute top-4 left-4 bg-cosmic-black text-cosmic-white">
-                        Most Popular
-                      </Badge>
-                    )}
-                  </div>
-                  
-                  <CardContent className={`p-8 lg:p-12 flex flex-col justify-center ${index % 2 === 1 ? 'lg:order-1' : ''}`}>
-                    <div className="space-y-6">
-                      <div>
-                        <p className="text-primary font-medium text-sm uppercase tracking-wide mb-2">
-                          {bundle.subtitle}
-                        </p>
-                        <h3 className="text-3xl font-bold mb-3">{bundle.title}</h3>
-                        <p className="text-muted-foreground text-lg">{bundle.description}</p>
-                      </div>
-
-                      <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-1">
-                          {[...Array(5)].map((_, i) => (
-                            <Star 
-                              key={i} 
-                              className={`h-4 w-4 ${i < Math.floor(bundle.rating) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
-                            />
-                          ))}
-                        </div>
-                        <span className="text-sm text-muted-foreground">
-                          {bundle.rating} ({bundle.reviews} reviews)
-                        </span>
-                      </div>
-
-                      <div className="space-y-2">
-                        <p className="text-sm text-muted-foreground">Includes {bundle.frames.length} frames:</p>
-                        <div className="flex flex-wrap gap-2">
-                          {bundle.frames.map((size, i) => (
-                            <Badge key={i} variant="outline" className="text-xs">
-                              {size}"
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-
+            {loading ? (
+              [1, 2, 3].map((i) => (
+                <Card key={i} className="overflow-hidden border-cosmic-border">
+                  <div className="grid lg:grid-cols-2 gap-8">
+                    <div className="h-80 bg-cosmic-gray/50 animate-pulse" />
+                    <CardContent className="p-12">
                       <div className="space-y-4">
-                        <div className="flex items-center gap-4">
-                          <span className="text-4xl font-bold">₹{bundle.bundlePrice.toLocaleString()}</span>
-                          <span className="text-xl text-muted-foreground line-through">
-                            ₹{bundle.originalPrice.toLocaleString()}
-                          </span>
-                          <Badge className="bg-primary text-primary-foreground">
-                            Save {bundle.savings}%
-                          </Badge>
-                        </div>
-                        
-                        <Button size="lg" className="w-full lg:w-auto">
-                          <ShoppingCart className="h-5 w-5 mr-2" />
-                          Add Bundle to Cart
-                        </Button>
+                        <div className="h-8 bg-cosmic-gray/50 rounded animate-pulse" />
+                        <div className="h-4 bg-cosmic-gray/50 rounded animate-pulse" />
+                        <div className="h-16 bg-cosmic-gray/50 rounded animate-pulse" />
                       </div>
+                    </CardContent>
+                  </div>
+                </Card>
+              ))
+            ) : featuredBundles.length === 0 ? (
+              <div className="text-center py-16">
+                <p className="text-muted-foreground">No featured bundles available</p>
+              </div>
+            ) : (
+              featuredBundles.map((bundle, index) => (
+                <Card key={bundle.id} className="overflow-hidden border-cosmic-border hover:shadow-cosmic transition-all duration-300">
+                  <div className={`grid lg:grid-cols-2 gap-8 ${index % 2 === 1 ? 'lg:flex-row-reverse' : ''}`}>
+                    <div className={`relative ${index % 2 === 1 ? 'lg:order-2' : ''}`}>
+                      <img 
+                        src={bundle.image_url || '/placeholder.svg'} 
+                        alt={bundle.name}
+                        className="w-full h-80 lg:h-full object-cover"
+                      />
+                      {bundle.featured && (
+                        <Badge className="absolute top-4 left-4 bg-cosmic-black text-cosmic-white">
+                          Featured
+                        </Badge>
+                      )}
                     </div>
-                  </CardContent>
-                </div>
-              </Card>
-            ))}
+                    
+                    <CardContent className={`p-8 lg:p-12 flex flex-col justify-center ${index % 2 === 1 ? 'lg:order-1' : ''}`}>
+                      <div className="space-y-6">
+                        <div>
+                          <h3 className="text-3xl font-bold mb-3">{bundle.name}</h3>
+                          <p className="text-muted-foreground text-lg">{bundle.description}</p>
+                        </div>
+
+                        <div className="space-y-2">
+                          <p className="text-sm text-muted-foreground">
+                            Includes {bundle.products?.length || 0} products
+                          </p>
+                          {bundle.products && bundle.products.length > 0 && (
+                            <div className="flex flex-wrap gap-2">
+                              {bundle.products.map((product) => (
+                                <Badge key={product.id} variant="outline" className="text-xs">
+                                  {product.name}
+                                </Badge>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="space-y-4">
+                          <div className="flex items-center gap-4">
+                            <span className="text-4xl font-bold">
+                              ₹{Math.round(bundle.discounted_price || 0).toLocaleString()}
+                            </span>
+                            {bundle.total_price && bundle.total_price > 0 && (
+                              <>
+                                <span className="text-xl text-muted-foreground line-through">
+                                  ₹{Math.round(bundle.total_price).toLocaleString()}
+                                </span>
+                                <Badge className="bg-primary text-primary-foreground">
+                                  Save {bundle.discount_percentage}%
+                                </Badge>
+                              </>
+                            )}
+                          </div>
+                          
+                          <Button 
+                            size="lg" 
+                            className="w-full lg:w-auto"
+                            onClick={() => handleAddToCart(bundle)}
+                          >
+                            <ShoppingCart className="h-5 w-5 mr-2" />
+                            Add Bundle to Cart
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </div>
+                </Card>
+              ))
+            )}
           </div>
         </div>
       </section>
 
-      {/* Occasion Bundles */}
+      {/* All Bundles */}
       <section className="py-16 bg-cosmic-gray/30">
         <div className="container-wide">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4">Occasion Collections</h2>
+            <h2 className="text-3xl font-bold mb-4">All Bundles</h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              Specially curated bundles for life's most important moments
+              Browse all available bundle collections
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {occasionBundles.map((bundle, index) => (
-              <Card key={index} className="overflow-hidden border-cosmic-border hover:shadow-cosmic transition-all duration-300 hover:-translate-y-1">
-                <div className="aspect-square overflow-hidden">
-                  <img 
-                    src={bundle.image} 
-                    alt={bundle.title}
-                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                  />
-                </div>
-                <CardContent className="p-6">
-                  <h3 className="font-bold text-lg mb-2">{bundle.title}</h3>
-                  <p className="text-muted-foreground text-sm mb-4">{bundle.description}</p>
-                  
-                  <div className="space-y-3">
-                    <p className="text-xs text-muted-foreground">
-                      {bundle.frames} frames included
-                    </p>
-                    
-                    <div className="flex items-center gap-2">
-                      <span className="text-xl font-bold">₹{bundle.price.toLocaleString()}</span>
-                      <span className="text-sm text-muted-foreground line-through">
-                        ₹{bundle.originalPrice.toLocaleString()}
-                      </span>
-                    </div>
-                    
-                    <Button size="sm" className="w-full">
-                      Add to Cart
-                    </Button>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {loading ? (
+              [1, 2, 3, 4, 5, 6].map((i) => (
+                <Card key={i} className="overflow-hidden">
+                  <div className="aspect-square bg-cosmic-gray/50 animate-pulse" />
+                  <CardContent className="p-6">
+                    <div className="h-6 bg-cosmic-gray/50 rounded animate-pulse mb-2" />
+                    <div className="h-4 bg-cosmic-gray/50 rounded animate-pulse" />
+                  </CardContent>
+                </Card>
+              ))
+            ) : bundles.filter(b => !b.featured).length === 0 ? (
+              <div className="col-span-full text-center py-8">
+                <p className="text-muted-foreground">No other bundles available</p>
+              </div>
+            ) : (
+              bundles.filter(b => !b.featured).map((bundle) => (
+                <Card key={bundle.id} className="overflow-hidden border-cosmic-border hover:shadow-cosmic transition-all duration-300 hover:-translate-y-1">
+                  <div className="aspect-square overflow-hidden">
+                    <img 
+                      src={bundle.image_url || '/placeholder.svg'} 
+                      alt={bundle.name}
+                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                    />
                   </div>
-                </CardContent>
-              </Card>
-            ))}
+                  <CardContent className="p-6">
+                    <h3 className="font-bold text-lg mb-2">{bundle.name}</h3>
+                    <p className="text-muted-foreground text-sm mb-4">{bundle.description}</p>
+                    
+                    <div className="space-y-3">
+                      <p className="text-xs text-muted-foreground">
+                        {bundle.products?.length || 0} products included
+                      </p>
+                      
+                      <div className="flex items-center gap-2">
+                        <span className="text-xl font-bold">
+                          ₹{Math.round(bundle.discounted_price || 0).toLocaleString()}
+                        </span>
+                        {bundle.total_price && bundle.total_price > 0 && (
+                          <span className="text-sm text-muted-foreground line-through">
+                            ₹{Math.round(bundle.total_price).toLocaleString()}
+                          </span>
+                        )}
+                      </div>
+                      
+                      <Button 
+                        size="sm" 
+                        className="w-full"
+                        onClick={() => handleAddToCart(bundle)}
+                      >
+                        Add to Cart
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
           </div>
         </div>
       </section>

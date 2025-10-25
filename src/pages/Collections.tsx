@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { Grid, List } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -142,22 +143,23 @@ const Collections = () => {
                 <Card 
                   key={collection.id} 
                   className="overflow-hidden border-cosmic-border hover:shadow-cosmic transition-all duration-300 hover:-translate-y-1 cursor-pointer"
-                  onClick={() => setSelectedCollection(collection.id)}
                 >
-                  <div className="aspect-video overflow-hidden">
-                    <img 
-                      src={collection.image_url || '/placeholder.svg'} 
-                      alt={collection.name}
-                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                    />
-                  </div>
-                  <CardContent className="p-6">
-                    <div className="flex justify-between items-start mb-2">
-                      <h3 className="font-bold text-lg">{collection.name}</h3>
-                      <Badge variant="outline">{collection.product_count || 0} items</Badge>
+                  <Link to={`/collection/${collection.id}`}>
+                    <div className="aspect-video overflow-hidden">
+                      <img 
+                        src={collection.image_url || '/placeholder.svg'} 
+                        alt={collection.name}
+                        className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                      />
                     </div>
-                    <p className="text-muted-foreground text-sm">{collection.description}</p>
-                  </CardContent>
+                    <CardContent className="p-6">
+                      <div className="flex justify-between items-start mb-2">
+                        <h3 className="font-bold text-lg">{collection.name}</h3>
+                        <Badge variant="outline">{collection.product_count || 0} items</Badge>
+                      </div>
+                      <p className="text-muted-foreground text-sm">{collection.description}</p>
+                    </CardContent>
+                  </Link>
                 </Card>
               ))
             )}
