@@ -40,6 +40,9 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
   const menuItems = [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/admin' },
     { icon: Package, label: 'Products', path: '/admin/products' },
+    { icon: Package, label: 'Collections', path: '/admin/collections' },
+    { icon: Package, label: 'Bundles', path: '/admin/bundles' },
+    { icon: Package, label: 'Frame Builder', path: '/admin/frame-builder' },
     { icon: ShoppingCart, label: 'Orders', path: '/admin/orders' },
     { icon: Users, label: 'Users', path: '/admin/users' },
     { icon: BarChart3, label: 'Analytics', path: '/admin/analytics' },

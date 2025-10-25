@@ -53,6 +53,78 @@ export type Database = {
         }
         Relationships: []
       }
+      bundle_products: {
+        Row: {
+          bundle_id: string | null
+          created_at: string | null
+          id: string
+          product_id: string | null
+          quantity: number | null
+        }
+        Insert: {
+          bundle_id?: string | null
+          created_at?: string | null
+          id?: string
+          product_id?: string | null
+          quantity?: number | null
+        }
+        Update: {
+          bundle_id?: string | null
+          created_at?: string | null
+          id?: string
+          product_id?: string | null
+          quantity?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bundle_products_bundle_id_fkey"
+            columns: ["bundle_id"]
+            isOneToOne: false
+            referencedRelation: "bundles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bundle_products_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bundles: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          discount_percentage: number | null
+          featured: boolean | null
+          id: string
+          image_url: string | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          discount_percentage?: number | null
+          featured?: boolean | null
+          id?: string
+          image_url?: string | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          discount_percentage?: number | null
+          featured?: boolean | null
+          id?: string
+          image_url?: string | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       cart_items: {
         Row: {
           created_at: string | null
@@ -109,6 +181,42 @@ export type Database = {
           id?: string
           image_url?: string | null
           name?: string
+        }
+        Relationships: []
+      }
+      custom_frame_options: {
+        Row: {
+          available: boolean | null
+          category: string
+          created_at: string | null
+          description: string | null
+          id: string
+          image_url: string | null
+          name: string
+          price_modifier: number | null
+          sort_order: number | null
+        }
+        Insert: {
+          available?: boolean | null
+          category: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          name: string
+          price_modifier?: number | null
+          sort_order?: number | null
+        }
+        Update: {
+          available?: boolean | null
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          name?: string
+          price_modifier?: number | null
+          sort_order?: number | null
         }
         Relationships: []
       }

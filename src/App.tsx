@@ -27,6 +27,9 @@ import AdminOrders from "./pages/admin/AdminOrders";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminAnalytics from "./pages/admin/AdminAnalytics";
 import AdminSettings from "./pages/admin/AdminSettings";
+import AdminCollections from "./pages/admin/AdminCollections";
+import AdminBundles from "./pages/admin/AdminBundles";
+import AdminFrameBuilder from "./pages/admin/AdminFrameBuilder";
 import AdminLayout from "./components/admin/AdminLayout";
 import ProtectedAdminRoute from "./components/admin/ProtectedAdminRoute";
 
@@ -132,6 +135,36 @@ const App = () => (
                       <ProtectedAdminRoute>
                         <AdminLayout>
                           <AdminSettings />
+                        </AdminLayout>
+                      </ProtectedAdminRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/collections"
+                    element={
+                      <ProtectedAdminRoute>
+                        <AdminLayout>
+                          <AdminCollections />
+                        </AdminLayout>
+                      </ProtectedAdminRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/bundles"
+                    element={
+                      <ProtectedAdminRoute>
+                        <AdminLayout>
+                          <AdminBundles />
+                        </AdminLayout>
+                      </ProtectedAdminRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/frame-builder"
+                    element={
+                      <ProtectedAdminRoute>
+                        <AdminLayout>
+                          <AdminFrameBuilder />
                         </AdminLayout>
                       </ProtectedAdminRoute>
                     }

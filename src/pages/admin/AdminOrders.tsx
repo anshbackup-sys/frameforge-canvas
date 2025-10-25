@@ -49,19 +49,32 @@ const AdminOrders = () => {
 
   const fetchOrders = async () => {
     try {
-      const { data, error } = await supabase
+      const { data: ordersData, error: ordersError } = await supabase
         .from('orders')
-        .select(`
-          *,
-          profiles:user_id (
-            full_name
-          )
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (ordersError) throw ordersError;
 
-      setOrders(data || []);
+      if (!ordersData) {
+        setOrders([]);
+        return;
+      }
+
+      // Fetch profiles separately
+      const userIds = ordersData.map(o => o.user_id);
+      const { data: profilesData } = await supabase
+        .from('profiles')
+        .select('id, full_name')
+        .in('id', userIds);
+
+      // Merge the data
+      const ordersWithProfiles = ordersData.map(order => ({
+        ...order,
+        profiles: profilesData?.find(p => p.id === order.user_id)
+      }));
+
+      setOrders(ordersWithProfiles);
     } catch (error) {
       console.error('Error fetching orders:', error);
       toast.error('Failed to load orders');
