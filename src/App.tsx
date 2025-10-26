@@ -11,8 +11,11 @@ import Index from "./pages/Index";
 import Shop from "./pages/Shop";
 import ProductDetail from "./pages/ProductDetail";
 import CustomBuilder from "./pages/CustomBuilder";
-import Cart from "./pages/Cart";
-import Profile from "./pages/Profile";
+import Cart from "./pages/CartNew";
+import Checkout from "./pages/Checkout";
+import OrderConfirmation from "./pages/OrderConfirmation";
+import OrderDetail from "./pages/OrderDetail";
+import ProfileNew from "./pages/ProfileNew";
 import Wishlist from "./pages/Wishlist";
 import Login from "./pages/Login";
 import About from "./pages/About";
@@ -52,7 +55,10 @@ const App = () => (
                   <Route path="/product/:id" element={<ProductDetail />} />
                   <Route path="/custom-builder" element={<CustomBuilder />} />
                   <Route path="/cart" element={<Cart />} />
-                  <Route path="/profile" element={<Profile />} />
+                  <Route path="/checkout" element={<Checkout />} />
+                  <Route path="/order-confirmation/:orderId" element={<OrderConfirmation />} />
+                  <Route path="/orders/:orderId" element={<OrderDetail />} />
+                  <Route path="/profile" element={<ProfileNew />} />
                   <Route path="/wishlist" element={<Wishlist />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/about" element={<About />} />

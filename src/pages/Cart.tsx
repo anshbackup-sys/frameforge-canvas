@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Minus, Plus, X, ShoppingCart, ArrowRight, Shield, Gift } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -24,6 +24,7 @@ interface CartItem {
 }
 
 const Cart = () => {
+  const navigate = useNavigate();
   const [cartItems, setCartItems] = useState<CartItem[]>([
     {
       id: 1,

@@ -262,32 +262,76 @@ export type Database = {
           },
         ]
       }
+      order_status_history: {
+        Row: {
+          created_at: string | null
+          id: string
+          notes: string | null
+          order_id: string
+          status: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          order_id: string
+          status: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          order_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_status_history_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orders: {
         Row: {
           created_at: string | null
           id: string
           order_number: string | null
+          payment_method: string | null
+          payment_status: string | null
           shipping_address: Json | null
           status: string | null
           total: number | null
+          tracking_number: string | null
+          updated_at: string | null
           user_id: string | null
         }
         Insert: {
           created_at?: string | null
           id?: string
           order_number?: string | null
+          payment_method?: string | null
+          payment_status?: string | null
           shipping_address?: Json | null
           status?: string | null
           total?: number | null
+          tracking_number?: string | null
+          updated_at?: string | null
           user_id?: string | null
         }
         Update: {
           created_at?: string | null
           id?: string
           order_number?: string | null
+          payment_method?: string | null
+          payment_status?: string | null
           shipping_address?: Json | null
           status?: string | null
           total?: number | null
+          tracking_number?: string | null
+          updated_at?: string | null
           user_id?: string | null
         }
         Relationships: []
