@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, Search, Edit, Trash2, Image as ImageIcon } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Image as ImageIcon, Tag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -17,6 +17,8 @@ import {
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import ProductSelector from '@/components/admin/ProductSelector';
 
 interface Collection {
   id: string;
@@ -25,6 +27,7 @@ interface Collection {
   image_url: string | null;
   featured: boolean;
   created_at: string;
+  product_count?: number;
 }
 
 const AdminCollections = () => {
@@ -39,6 +42,8 @@ const AdminCollections = () => {
     image_url: '',
     featured: false,
   });
+  const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     fetchCollections();
@@ -52,7 +57,18 @@ const AdminCollections = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setCollections(data || []);
+
+      const collectionsWithCounts = await Promise.all(
+        (data || []).map(async (collection) => {
+          const { count } = await supabase
+            .from('product_collections')
+            .select('*', { count: 'exact', head: true })
+            .eq('collection_id', collection.id);
+          return { ...collection, product_count: count || 0 };
+        })
+      );
+
+      setCollections(collectionsWithCounts);
     } catch (error) {
       console.error('Error fetching collections:', error);
       toast.error('Failed to load collections');
@@ -61,10 +77,28 @@ const AdminCollections = () => {
     }
   };
 
+  const fetchCollectionProducts = async (collectionId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('product_collections')
+        .select('product_id')
+        .eq('collection_id', collectionId);
+
+      if (error) throw error;
+      return (data || []).map(pc => pc.product_id);
+    } catch (error) {
+      console.error('Error fetching collection products:', error);
+      return [];
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+    setSaving(true);
+
     try {
+      let collectionId: string;
+
       if (editingCollection) {
         const { error } = await supabase
           .from('collections')
@@ -72,14 +106,38 @@ const AdminCollections = () => {
           .eq('id', editingCollection.id);
 
         if (error) throw error;
+        collectionId = editingCollection.id;
         toast.success('Collection updated successfully');
       } else {
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('collections')
-          .insert([formData]);
+          .insert([formData])
+          .select()
+          .single();
 
         if (error) throw error;
+        collectionId = data.id;
         toast.success('Collection created successfully');
+      }
+
+      const { error: deleteError } = await supabase
+        .from('product_collections')
+        .delete()
+        .eq('collection_id', collectionId);
+
+      if (deleteError) throw deleteError;
+
+      if (selectedProductIds.length > 0) {
+        const productCollections = selectedProductIds.map(productId => ({
+          collection_id: collectionId,
+          product_id: productId,
+        }));
+
+        const { error: insertError } = await supabase
+          .from('product_collections')
+          .insert(productCollections);
+
+        if (insertError) throw insertError;
       }
 
       setDialogOpen(false);
@@ -88,11 +146,13 @@ const AdminCollections = () => {
     } catch (error) {
       console.error('Error saving collection:', error);
       toast.error('Failed to save collection');
+    } finally {
+      setSaving(false);
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this collection?')) return;
+    if (!confirm('Are you sure you want to delete this collection? This will not delete the products.')) return;
 
     try {
       const { error } = await supabase
@@ -116,10 +176,11 @@ const AdminCollections = () => {
       image_url: '',
       featured: false,
     });
+    setSelectedProductIds([]);
     setEditingCollection(null);
   };
 
-  const openEditDialog = (collection: Collection) => {
+  const openEditDialog = async (collection: Collection) => {
     setEditingCollection(collection);
     setFormData({
       name: collection.name,
@@ -127,6 +188,8 @@ const AdminCollections = () => {
       image_url: collection.image_url || '',
       featured: collection.featured,
     });
+    const productIds = await fetchCollectionProducts(collection.id);
+    setSelectedProductIds(productIds);
     setDialogOpen(true);
   };
 
@@ -164,58 +227,79 @@ const AdminCollections = () => {
               Add Collection
             </Button>
           </DialogTrigger>
-          <DialogContent className="bg-slate-900 border-slate-700 text-white max-w-2xl">
+          <DialogContent className="bg-slate-900 border-slate-700 text-white max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{editingCollection ? 'Edit Collection' : 'Create New Collection'}</DialogTitle>
               <DialogDescription className="text-slate-400">
-                {editingCollection ? 'Update collection details' : 'Add a new collection to your store'}
+                {editingCollection ? 'Update collection details and tag products' : 'Add a new collection and tag products to it'}
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Collection Name</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="bg-slate-800 border-slate-700"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="bg-slate-800 border-slate-700"
-                  rows={4}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="image_url">Image URL</Label>
-                <Input
-                  id="image_url"
-                  value={formData.image_url}
-                  onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                  className="bg-slate-800 border-slate-700"
-                  placeholder="https://example.com/image.jpg"
-                />
-              </div>
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="featured"
-                  checked={formData.featured}
-                  onCheckedChange={(checked) => setFormData({ ...formData, featured: checked })}
-                />
-                <Label htmlFor="featured">Featured Collection</Label>
-              </div>
-              <div className="flex justify-end gap-2">
+              <Tabs defaultValue="details" className="w-full">
+                <TabsList className="grid w-full grid-cols-2 bg-slate-800">
+                  <TabsTrigger value="details">Collection Details</TabsTrigger>
+                  <TabsTrigger value="products">
+                    <Tag className="h-4 w-4 mr-2" />
+                    Tag Products ({selectedProductIds.length})
+                  </TabsTrigger>
+                </TabsList>
+                <TabsContent value="details" className="space-y-4 mt-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Collection Name *</Label>
+                    <Input
+                      id="name"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      className="bg-slate-800 border-slate-700"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="description">Description</Label>
+                    <Textarea
+                      id="description"
+                      value={formData.description}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      className="bg-slate-800 border-slate-700"
+                      rows={4}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="image_url">Image URL</Label>
+                    <Input
+                      id="image_url"
+                      value={formData.image_url}
+                      onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
+                      className="bg-slate-800 border-slate-700"
+                      placeholder="https://example.com/image.jpg"
+                    />
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="featured"
+                      checked={formData.featured}
+                      onCheckedChange={(checked) => setFormData({ ...formData, featured: checked })}
+                    />
+                    <Label htmlFor="featured">Featured Collection</Label>
+                  </div>
+                </TabsContent>
+                <TabsContent value="products" className="mt-4">
+                  <ProductSelector
+                    selectedProductIds={selectedProductIds}
+                    onProductsChange={setSelectedProductIds}
+                  />
+                </TabsContent>
+              </Tabs>
+              <div className="flex justify-end gap-2 pt-4 border-t border-slate-700">
                 <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
                   Cancel
                 </Button>
-                <Button type="submit" className="bg-gradient-to-r from-blue-600 to-purple-600">
-                  {editingCollection ? 'Update' : 'Create'}
+                <Button
+                  type="submit"
+                  className="bg-gradient-to-r from-blue-600 to-purple-600"
+                  disabled={saving}
+                >
+                  {saving ? 'Saving...' : (editingCollection ? 'Update' : 'Create')}
                 </Button>
               </div>
             </form>
@@ -245,10 +329,10 @@ const AdminCollections = () => {
               </div>
             ) : (
               filteredCollections.map((collection) => (
-                <Card key={collection.id} className="bg-slate-900/50 border-slate-700 overflow-hidden">
-                  <div className="aspect-video bg-slate-800 relative">
+                <Card key={collection.id} className="bg-slate-900/50 border-slate-700 overflow-hidden group hover:border-blue-600 transition-all">
+                  <div className="aspect-video bg-slate-800 relative overflow-hidden">
                     {collection.image_url ? (
-                      <img src={collection.image_url} alt={collection.name} className="w-full h-full object-cover" />
+                      <img src={collection.image_url} alt={collection.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
                         <ImageIcon className="h-12 w-12 text-slate-600" />
@@ -259,17 +343,23 @@ const AdminCollections = () => {
                         Featured
                       </Badge>
                     )}
+                    {collection.product_count !== undefined && (
+                      <Badge className="absolute top-2 left-2 bg-slate-900/80">
+                        <Tag className="h-3 w-3 mr-1" />
+                        {collection.product_count} Products
+                      </Badge>
+                    )}
                   </div>
                   <CardContent className="p-4">
-                    <h3 className="text-lg font-semibold text-white mb-2">{collection.name}</h3>
-                    <p className="text-sm text-slate-400 mb-4 line-clamp-2">
+                    <h3 className="text-lg font-semibold text-white mb-2 truncate">{collection.name}</h3>
+                    <p className="text-sm text-slate-400 mb-4 line-clamp-2 h-10">
                       {collection.description || 'No description'}
                     </p>
                     <div className="flex gap-2">
                       <Button
                         size="sm"
                         variant="outline"
-                        className="flex-1 border-slate-700"
+                        className="flex-1 border-slate-700 hover:bg-slate-800"
                         onClick={() => openEditDialog(collection)}
                       >
                         <Edit className="h-4 w-4 mr-1" />
