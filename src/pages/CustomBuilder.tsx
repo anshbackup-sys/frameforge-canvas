@@ -1,72 +1,344 @@
-import { useState, useRef } from "react";
-import { Upload, Download, Share2, Save, ArrowLeft, ArrowRight } from "lucide-react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { Upload, Share2, Save, ArrowLeft, ArrowRight, ShoppingCart, Check, Copy, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useCart } from "@/contexts/CartContext";
+import { toast } from "sonner";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { useNavigate, useSearchParams } from "react-router-dom";
+
+interface FrameOption {
+  id: string;
+  category: string;
+  name: string;
+  description: string | null;
+  price_modifier: number;
+  image_url: string | null;
+  available: boolean;
+}
+
+interface FrameConfig {
+  material: string;
+  size: string;
+  color: string;
+  finish: string;
+  matting: string;
+  glazing: string;
+  mounting: string;
+  matWidth: number;
+  engraving: string;
+}
 
 const CustomBuilder = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  const [processedImage, setProcessedImage] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState(1);
-  const [frameConfig, setFrameConfig] = useState({
-    material: "wood",
-    color: "oak",
-    size: "8x10",
-    matting: "white",
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [shareLink, setShareLink] = useState('');
+  const [successDialogOpen, setSuccessDialogOpen] = useState(false);
+  
+  const [frameOptions, setFrameOptions] = useState<Record<string, FrameOption[]>>({
+    material: [],
+    size: [],
+    color: [],
+    finish: [],
+    matting: [],
+    glazing: [],
+    mounting: [],
+  });
+
+  const [frameConfig, setFrameConfig] = useState<FrameConfig>({
+    material: "",
+    size: "",
+    color: "",
+    finish: "",
+    matting: "",
+    glazing: "",
+    mounting: "",
     matWidth: 2,
-    glazing: "glass",
-    mounting: "foam",
     engraving: "",
   });
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setUploadedImage(e.target?.result as string);
+  // Fetch frame options from database
+  useEffect(() => {
+    const fetchOptions = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('custom_frame_options')
+          .select('*')
+          .eq('available', true)
+          .order('sort_order');
+
+        if (error) throw error;
+
+        // Group options by category
+        const grouped: Record<string, FrameOption[]> = {
+          material: [],
+          size: [],
+          color: [],
+          finish: [],
+          matting: [],
+          glazing: [],
+          mounting: [],
+        };
+
+        data?.forEach(option => {
+          if (grouped[option.category]) {
+            grouped[option.category].push(option);
+          }
+        });
+
+        setFrameOptions(grouped);
+
+        // Set defaults
+        setFrameConfig(prev => ({
+          ...prev,
+          material: grouped.material[0]?.name || "",
+          size: grouped.size[1]?.name || grouped.size[0]?.name || "",
+          color: grouped.color[0]?.name || "",
+          finish: grouped.finish[0]?.name || "",
+          matting: grouped.matting[0]?.name || "",
+          glazing: grouped.glazing[0]?.name || "",
+          mounting: grouped.mounting[0]?.name || "",
+        }));
+      } catch (error) {
+        console.error('Error fetching frame options:', error);
+        toast.error('Failed to load frame options');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOptions();
+  }, []);
+
+  // Load shared design from URL
+  useEffect(() => {
+    const shareCode = searchParams.get('design');
+    if (shareCode) {
+      loadSharedDesign(shareCode);
+    }
+  }, [searchParams]);
+
+  const loadSharedDesign = async (shareCode: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('saved_designs')
+        .select('*')
+        .eq('share_code', shareCode)
+        .single();
+
+      if (error) throw error;
+
+      if (data) {
+        const config = data.frame_config as unknown as FrameConfig;
+        setFrameConfig(config);
+        if (data.image_url) {
+          setUploadedImage(data.image_url);
+          setProcessedImage(data.image_url);
+        }
         setCurrentStep(2);
-      };
-      reader.readAsDataURL(file);
+        toast.success('Design loaded successfully');
+      }
+    } catch (error) {
+      console.error('Error loading shared design:', error);
     }
   };
 
-  const calculatePrice = () => {
-    let basePrice = 1299; // Base price for standard frame
-    
-    // Material multiplier
-    const materialMultipliers = {
-      wood: 1.0,
-      metal: 0.8,
-      acrylic: 1.2,
-    };
-    
-    // Size multiplier
-    const sizeMultipliers = {
-      "5x7": 0.7,
-      "8x10": 1.0,
-      "11x14": 1.4,
-      "16x20": 2.0,
-      "custom": 2.5,
-    };
+  // Process uploaded image - resize for preview
+  const processImage = useCallback((file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const maxSize = 800;
+        let { width, height } = img;
 
-    basePrice *= materialMultipliers[frameConfig.material as keyof typeof materialMultipliers];
-    basePrice *= sizeMultipliers[frameConfig.size as keyof typeof sizeMultipliers];
+        if (width > height) {
+          if (width > maxSize) {
+            height = (height * maxSize) / width;
+            width = maxSize;
+          }
+        } else {
+          if (height > maxSize) {
+            width = (width * maxSize) / height;
+            height = maxSize;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          reject(new Error('Failed to get canvas context'));
+          return;
+        }
+
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', 0.9));
+      };
+      img.onerror = () => reject(new Error('Failed to load image'));
+      img.src = URL.createObjectURL(file);
+    });
+  }, []);
+
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please upload an image file');
+      return;
+    }
+
+    if (file.size > 20 * 1024 * 1024) {
+      toast.error('Image must be less than 20MB');
+      return;
+    }
+
+    try {
+      const processed = await processImage(file);
+      setUploadedImage(URL.createObjectURL(file));
+      setProcessedImage(processed);
+      setCurrentStep(2);
+      toast.success('Image uploaded successfully');
+    } catch (error) {
+      console.error('Error processing image:', error);
+      toast.error('Failed to process image');
+    }
+  };
+
+  const getOptionPrice = (category: string, optionName: string): number => {
+    const option = frameOptions[category]?.find(o => o.name === optionName);
+    return option?.price_modifier || 0;
+  };
+
+  const calculatePrice = () => {
+    let basePrice = 1299;
     
-    // Add-ons
-    if (frameConfig.matting !== "none") basePrice += 299;
-    if (frameConfig.glazing === "anti-glare") basePrice += 199;
+    // Add price modifiers from selected options
+    basePrice += getOptionPrice('material', frameConfig.material);
+    basePrice += getOptionPrice('size', frameConfig.size);
+    basePrice += getOptionPrice('color', frameConfig.color);
+    basePrice += getOptionPrice('finish', frameConfig.finish);
+    basePrice += getOptionPrice('matting', frameConfig.matting);
+    basePrice += getOptionPrice('glazing', frameConfig.glazing);
+    basePrice += getOptionPrice('mounting', frameConfig.mounting);
+    
+    // Engraving add-on
     if (frameConfig.engraving) basePrice += 399;
 
-    return Math.round(basePrice);
+    return Math.max(basePrice, 0);
+  };
+
+  const handleSaveDesign = async () => {
+    if (!user) {
+      toast.error('Please sign in to save your design');
+      navigate('/login');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const shareCode = Math.random().toString(36).substring(2, 10);
+      
+      const { error } = await supabase
+        .from('saved_designs')
+        .insert([{
+          user_id: user.id,
+          name: `Custom Frame - ${new Date().toLocaleDateString()}`,
+          image_url: uploadedImage,
+          frame_config: frameConfig as unknown as Record<string, unknown>,
+          total_price: calculatePrice(),
+          share_code: shareCode,
+        }]);
+
+      if (error) throw error;
+
+      toast.success('Design saved successfully!');
+    } catch (error: any) {
+      console.error('Error saving design:', error);
+      toast.error(error.message || 'Failed to save design');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleShare = async () => {
+    const shareCode = Math.random().toString(36).substring(2, 10);
+    const link = `${window.location.origin}/custom-builder?design=${shareCode}`;
+    
+    if (user) {
+      try {
+        await supabase
+          .from('saved_designs')
+          .insert([{
+            user_id: user.id,
+            name: `Shared Design - ${new Date().toLocaleDateString()}`,
+            image_url: uploadedImage,
+            frame_config: frameConfig as unknown as Record<string, unknown>,
+            total_price: calculatePrice(),
+            share_code: shareCode,
+          }]);
+      } catch (error) {
+        console.error('Error creating share link:', error);
+      }
+    }
+
+    setShareLink(link);
+    setShareDialogOpen(true);
+  };
+
+  const copyShareLink = () => {
+    navigator.clipboard.writeText(shareLink);
+    toast.success('Link copied to clipboard!');
+  };
+
+  const handleAddToCart = async () => {
+    if (!user) {
+      toast.error('Please sign in to add to cart');
+      navigate('/login');
+      return;
+    }
+
+    try {
+      // Save custom frame order
+      const { data, error } = await supabase
+        .from('custom_frame_orders')
+        .insert([{
+          user_id: user.id,
+          image_url: uploadedImage,
+          frame_config: frameConfig as unknown as Record<string, unknown>,
+          total_price: calculatePrice(),
+          status: 'pending',
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setSuccessDialogOpen(true);
+    } catch (error: any) {
+      console.error('Error adding to cart:', error);
+      toast.error(error.message || 'Failed to add to cart');
+    }
   };
 
   const steps = [
@@ -75,6 +347,45 @@ const CustomBuilder = () => {
     { id: 3, title: "Customize", description: "Mat, glass & extras" },
     { id: 4, title: "Review", description: "Final preview & order" },
   ];
+
+  const getFrameColor = () => {
+    const colorMap: Record<string, string> = {
+      'Natural Oak': '#D2B48C',
+      'Walnut Brown': '#5D4037',
+      'Espresso': '#3E2723',
+      'Classic Black': '#1a1a1a',
+      'Pure White': '#FFFFFF',
+      'Silver': '#C0C0C0',
+      'Gold': '#D4AF37',
+      'Rose Gold': '#B76E79',
+    };
+    return colorMap[frameConfig.color] || '#8B4513';
+  };
+
+  const getMatColor = () => {
+    const matMap: Record<string, string> = {
+      'No Mat': 'transparent',
+      'White Mat': '#FFFFFF',
+      'Cream Mat': '#FFFDD0',
+      'Black Mat': '#1a1a1a',
+      'Gray Mat': '#808080',
+      'Double Mat': '#FFFFFF',
+    };
+    return matMap[frameConfig.matting] || '#FFFFFF';
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen">
+        <Header />
+        <div className="container-wide py-20 text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading frame options...</p>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen">
@@ -103,24 +414,25 @@ const CustomBuilder = () => {
         {/* Progress Steps */}
         <div className="mb-8">
           <div className="flex justify-center">
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 md:space-x-4 overflow-x-auto pb-2">
               {steps.map((step, index) => (
-                <div key={step.id} className="flex items-center">
-                  <div
-                    className={`w-10 h-10 rounded-full flex items-center justify-center font-medium ${
+                <div key={step.id} className="flex items-center flex-shrink-0">
+                  <button
+                    onClick={() => uploadedImage && setCurrentStep(step.id)}
+                    disabled={!uploadedImage && step.id > 1}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
                       currentStep >= step.id
                         ? "bg-primary text-primary-foreground"
                         : "bg-muted text-muted-foreground"
-                    }`}
+                    } ${uploadedImage || step.id === 1 ? 'cursor-pointer hover:opacity-80' : 'cursor-not-allowed'}`}
                   >
-                    {step.id}
-                  </div>
-                  <div className="ml-2 hidden sm:block">
-                    <div className="text-sm font-medium">{step.title}</div>
-                    <div className="text-xs text-muted-foreground">{step.description}</div>
-                  </div>
+                    <span className="w-6 h-6 rounded-full bg-background/20 flex items-center justify-center text-sm font-medium">
+                      {currentStep > step.id ? <Check className="h-4 w-4" /> : step.id}
+                    </span>
+                    <span className="hidden sm:inline text-sm font-medium">{step.title}</span>
+                  </button>
                   {index < steps.length - 1 && (
-                    <ArrowRight className="mx-4 h-4 w-4 text-muted-foreground" />
+                    <ArrowRight className="mx-2 h-4 w-4 text-muted-foreground flex-shrink-0" />
                   )}
                 </div>
               ))}
@@ -136,19 +448,23 @@ const CustomBuilder = () => {
                 <CardTitle>Frame Preview</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="frame-preview aspect-square bg-muted/20 flex items-center justify-center">
-                  {uploadedImage ? (
-                    <div className="relative">
+                <div className="aspect-square bg-gradient-to-br from-muted/30 to-muted/10 rounded-lg flex items-center justify-center p-8 overflow-hidden">
+                  {processedImage ? (
+                    <div 
+                      className="relative max-w-full max-h-full"
+                      style={{
+                        padding: frameConfig.matting !== 'No Mat' ? `${frameConfig.matWidth * 12}px` : '0',
+                        backgroundColor: getMatColor(),
+                        boxShadow: `0 0 0 16px ${getFrameColor()}, 0 4px 20px rgba(0,0,0,0.3)`,
+                        borderRadius: '2px',
+                      }}
+                    >
                       <img
-                        src={uploadedImage}
+                        src={processedImage}
                         alt="Your photo"
-                        className="max-w-full max-h-80 object-contain"
+                        className="max-w-full max-h-64 object-contain block"
                         style={{
-                          border: `${frameConfig.matWidth * 4}px solid white`,
-                          boxShadow: `0 0 0 12px ${
-                            frameConfig.material === "wood" ? "#8B4513" : 
-                            frameConfig.material === "metal" ? "#2D2D2D" : "#E0E0E0"
-                          }`,
+                          filter: frameConfig.glazing === 'Anti-glare Glass' ? 'brightness(0.98)' : 'none',
                         }}
                       />
                     </div>
@@ -160,22 +476,17 @@ const CustomBuilder = () => {
                   )}
                 </div>
 
-                {/* Frame Info */}
+                {/* Frame Info Summary */}
                 {uploadedImage && (
                   <div className="mt-4 p-4 bg-muted/30 rounded-lg">
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <span className="font-medium">Material:</span> {frameConfig.material}
-                      </div>
-                      <div>
-                        <span className="font-medium">Size:</span> {frameConfig.size}
-                      </div>
-                      <div>
-                        <span className="font-medium">Matting:</span> {frameConfig.matting}
-                      </div>
-                      <div>
-                        <span className="font-medium">Glazing:</span> {frameConfig.glazing}
-                      </div>
+                    <h4 className="font-medium mb-2">Your Selection</h4>
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div><span className="text-muted-foreground">Material:</span> {frameConfig.material}</div>
+                      <div><span className="text-muted-foreground">Size:</span> {frameConfig.size}</div>
+                      <div><span className="text-muted-foreground">Color:</span> {frameConfig.color}</div>
+                      <div><span className="text-muted-foreground">Finish:</span> {frameConfig.finish}</div>
+                      <div><span className="text-muted-foreground">Mat:</span> {frameConfig.matting}</div>
+                      <div><span className="text-muted-foreground">Glass:</span> {frameConfig.glazing}</div>
                     </div>
                   </div>
                 )}
@@ -188,37 +499,55 @@ const CustomBuilder = () => {
                 <CardTitle>Price Breakdown</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2">
+                <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span>Base Frame</span>
                     <span>₹1,299</span>
                   </div>
-                  {frameConfig.matting !== "none" && (
-                    <div className="flex justify-between">
-                      <span>Matting</span>
-                      <span>₹299</span>
+                  {getOptionPrice('material', frameConfig.material) !== 0 && (
+                    <div className="flex justify-between text-muted-foreground">
+                      <span>{frameConfig.material}</span>
+                      <span>{getOptionPrice('material', frameConfig.material) > 0 ? '+' : ''}₹{getOptionPrice('material', frameConfig.material)}</span>
                     </div>
                   )}
-                  {frameConfig.glazing === "anti-glare" && (
-                    <div className="flex justify-between">
-                      <span>Anti-glare Glass</span>
-                      <span>₹199</span>
+                  {getOptionPrice('size', frameConfig.size) !== 0 && (
+                    <div className="flex justify-between text-muted-foreground">
+                      <span>{frameConfig.size}</span>
+                      <span>{getOptionPrice('size', frameConfig.size) > 0 ? '+' : ''}₹{getOptionPrice('size', frameConfig.size)}</span>
+                    </div>
+                  )}
+                  {getOptionPrice('matting', frameConfig.matting) !== 0 && (
+                    <div className="flex justify-between text-muted-foreground">
+                      <span>{frameConfig.matting}</span>
+                      <span>+₹{getOptionPrice('matting', frameConfig.matting)}</span>
+                    </div>
+                  )}
+                  {getOptionPrice('glazing', frameConfig.glazing) !== 0 && (
+                    <div className="flex justify-between text-muted-foreground">
+                      <span>{frameConfig.glazing}</span>
+                      <span>+₹{getOptionPrice('glazing', frameConfig.glazing)}</span>
                     </div>
                   )}
                   {frameConfig.engraving && (
-                    <div className="flex justify-between">
+                    <div className="flex justify-between text-muted-foreground">
                       <span>Custom Engraving</span>
-                      <span>₹399</span>
+                      <span>+₹399</span>
                     </div>
                   )}
-                  <hr className="my-2" />
+                  <hr className="my-3" />
                   <div className="flex justify-between font-bold text-lg">
                     <span>Total</span>
                     <span>₹{calculatePrice().toLocaleString()}</span>
                   </div>
                 </div>
                 
-                <Button className="w-full mt-4 btn-hero" size="lg">
+                <Button 
+                  className="w-full mt-4" 
+                  size="lg"
+                  onClick={handleAddToCart}
+                  disabled={!uploadedImage}
+                >
+                  <ShoppingCart className="h-4 w-4 mr-2" />
                   Add to Cart - ₹{calculatePrice().toLocaleString()}
                 </Button>
               </CardContent>
@@ -254,16 +583,16 @@ const CustomBuilder = () => {
                     className="hidden"
                   />
 
-                  <div className="text-xs text-muted-foreground">
-                    <p>• Supported formats: JPG, PNG, HEIC</p>
-                    <p>• Colors may vary slightly due to screen differences</p>
+                  <div className="text-xs text-muted-foreground space-y-1">
+                    <p>• Supported formats: JPG, PNG, WEBP</p>
+                    <p>• Images are automatically optimized for preview</p>
                     <p>• We'll crop to fit your chosen frame size</p>
                   </div>
                 </CardContent>
               </Card>
             )}
 
-            {/* Step 2 & 3: Frame Configuration */}
+            {/* Step 2-4: Frame Configuration */}
             {currentStep >= 2 && (
               <Card>
                 <CardHeader>
@@ -277,98 +606,124 @@ const CustomBuilder = () => {
                       <TabsTrigger value="extras">Extras</TabsTrigger>
                     </TabsList>
 
-                    <TabsContent value="frame" className="space-y-4">
-                      {/* Frame Material */}
+                    <TabsContent value="frame" className="space-y-6 mt-4">
+                      {/* Material */}
                       <div>
-                        <Label className="text-base font-medium">Frame Material</Label>
-                        <div className="grid grid-cols-3 gap-3 mt-2">
-                          {["wood", "metal", "acrylic"].map((material) => (
+                        <Label className="text-base font-medium">Material</Label>
+                        <div className="grid grid-cols-2 gap-2 mt-2">
+                          {frameOptions.material.map((option) => (
                             <button
-                              key={material}
-                              onClick={() => setFrameConfig({ ...frameConfig, material })}
-                              className={`p-3 border rounded-lg text-sm capitalize ${
-                                frameConfig.material === material
+                              key={option.id}
+                              onClick={() => setFrameConfig({ ...frameConfig, material: option.name })}
+                              className={`p-3 border rounded-lg text-left transition-colors ${
+                                frameConfig.material === option.name
                                   ? "border-primary bg-primary/10"
-                                  : "border-border"
+                                  : "border-border hover:border-primary/50"
                               }`}
                             >
-                              {material}
+                              <div className="font-medium text-sm">{option.name}</div>
+                              {option.price_modifier !== 0 && (
+                                <div className="text-xs text-muted-foreground">
+                                  {option.price_modifier > 0 ? '+' : ''}₹{option.price_modifier}
+                                </div>
+                              )}
                             </button>
                           ))}
                         </div>
                       </div>
 
-                      {/* Frame Size */}
+                      {/* Size */}
                       <div>
-                        <Label className="text-base font-medium">Frame Size</Label>
-                        <Select
-                          value={frameConfig.size}
-                          onValueChange={(size) => setFrameConfig({ ...frameConfig, size })}
-                        >
-                          <SelectTrigger className="mt-2">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="5x7">5" × 7"</SelectItem>
-                            <SelectItem value="8x10">8" × 10"</SelectItem>
-                            <SelectItem value="11x14">11" × 14"</SelectItem>
-                            <SelectItem value="16x20">16" × 20"</SelectItem>
-                            <SelectItem value="custom">Custom Size</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <Label className="text-base font-medium">Size</Label>
+                        <div className="grid grid-cols-2 gap-2 mt-2">
+                          {frameOptions.size.map((option) => (
+                            <button
+                              key={option.id}
+                              onClick={() => setFrameConfig({ ...frameConfig, size: option.name })}
+                              className={`p-3 border rounded-lg text-left transition-colors ${
+                                frameConfig.size === option.name
+                                  ? "border-primary bg-primary/10"
+                                  : "border-border hover:border-primary/50"
+                              }`}
+                            >
+                              <div className="font-medium text-sm">{option.name}</div>
+                              {option.price_modifier !== 0 && (
+                                <div className="text-xs text-muted-foreground">
+                                  {option.price_modifier > 0 ? '+' : ''}₹{option.price_modifier}
+                                </div>
+                              )}
+                            </button>
+                          ))}
+                        </div>
                       </div>
 
-                      {/* Frame Color */}
+                      {/* Color */}
                       <div>
-                        <Label className="text-base font-medium">Frame Color</Label>
+                        <Label className="text-base font-medium">Color</Label>
                         <div className="grid grid-cols-4 gap-2 mt-2">
-                          {["oak", "walnut", "black", "white"].map((color) => (
+                          {frameOptions.color.map((option) => (
                             <button
-                              key={color}
-                              onClick={() => setFrameConfig({ ...frameConfig, color })}
-                              className={`h-12 rounded-lg border-2 capitalize ${
-                                frameConfig.color === color
-                                  ? "border-primary"
-                                  : "border-border"
+                              key={option.id}
+                              onClick={() => setFrameConfig({ ...frameConfig, color: option.name })}
+                              className={`p-2 border rounded-lg text-center transition-colors ${
+                                frameConfig.color === option.name
+                                  ? "border-primary ring-2 ring-primary/50"
+                                  : "border-border hover:border-primary/50"
                               }`}
-                              style={{
-                                backgroundColor: color === "oak" ? "#D2B48C" : 
-                                              color === "walnut" ? "#8B4513" :
-                                              color === "black" ? "#2D2D2D" : "#FFFFFF"
-                              }}
                             >
-                              <span className={color === "white" ? "text-black" : "text-white"}>
-                                {color}
-                              </span>
+                              <div className="text-xs font-medium truncate">{option.name.split(' ')[0]}</div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Finish */}
+                      <div>
+                        <Label className="text-base font-medium">Finish</Label>
+                        <div className="grid grid-cols-3 gap-2 mt-2">
+                          {frameOptions.finish.map((option) => (
+                            <button
+                              key={option.id}
+                              onClick={() => setFrameConfig({ ...frameConfig, finish: option.name })}
+                              className={`p-3 border rounded-lg text-sm transition-colors ${
+                                frameConfig.finish === option.name
+                                  ? "border-primary bg-primary/10"
+                                  : "border-border hover:border-primary/50"
+                              }`}
+                            >
+                              {option.name}
                             </button>
                           ))}
                         </div>
                       </div>
                     </TabsContent>
 
-                    <TabsContent value="matting" className="space-y-4">
+                    <TabsContent value="matting" className="space-y-6 mt-4">
                       {/* Mat Selection */}
                       <div>
-                        <Label className="text-base font-medium">Matting</Label>
-                        <Select
-                          value={frameConfig.matting}
-                          onValueChange={(matting) => setFrameConfig({ ...frameConfig, matting })}
-                        >
-                          <SelectTrigger className="mt-2">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="none">No Matting</SelectItem>
-                            <SelectItem value="white">White Mat</SelectItem>
-                            <SelectItem value="cream">Cream Mat</SelectItem>
-                            <SelectItem value="black">Black Mat</SelectItem>
-                            <SelectItem value="double">Double Mat</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <Label className="text-base font-medium">Matting Style</Label>
+                        <div className="grid grid-cols-2 gap-2 mt-2">
+                          {frameOptions.matting.map((option) => (
+                            <button
+                              key={option.id}
+                              onClick={() => setFrameConfig({ ...frameConfig, matting: option.name })}
+                              className={`p-3 border rounded-lg text-left transition-colors ${
+                                frameConfig.matting === option.name
+                                  ? "border-primary bg-primary/10"
+                                  : "border-border hover:border-primary/50"
+                              }`}
+                            >
+                              <div className="font-medium text-sm">{option.name}</div>
+                              {option.price_modifier !== 0 && (
+                                <div className="text-xs text-muted-foreground">+₹{option.price_modifier}</div>
+                              )}
+                            </button>
+                          ))}
+                        </div>
                       </div>
 
                       {/* Mat Width */}
-                      {frameConfig.matting !== "none" && (
+                      {frameConfig.matting !== 'No Mat' && (
                         <div>
                           <Label className="text-base font-medium">
                             Mat Width: {frameConfig.matWidth}"
@@ -379,7 +734,7 @@ const CustomBuilder = () => {
                             max={4}
                             min={1}
                             step={0.5}
-                            className="mt-2"
+                            className="mt-3"
                           />
                         </div>
                       )}
@@ -387,68 +742,78 @@ const CustomBuilder = () => {
                       {/* Glazing */}
                       <div>
                         <Label className="text-base font-medium">Glass Type</Label>
-                        <Select
-                          value={frameConfig.glazing}
-                          onValueChange={(glazing) => setFrameConfig({ ...frameConfig, glazing })}
-                        >
-                          <SelectTrigger className="mt-2">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="glass">Standard Glass</SelectItem>
-                            <SelectItem value="anti-glare">Anti-glare Glass (+₹199)</SelectItem>
-                            <SelectItem value="acrylic">Acrylic</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <div className="grid grid-cols-1 gap-2 mt-2">
+                          {frameOptions.glazing.map((option) => (
+                            <button
+                              key={option.id}
+                              onClick={() => setFrameConfig({ ...frameConfig, glazing: option.name })}
+                              className={`p-3 border rounded-lg text-left transition-colors ${
+                                frameConfig.glazing === option.name
+                                  ? "border-primary bg-primary/10"
+                                  : "border-border hover:border-primary/50"
+                              }`}
+                            >
+                              <div className="flex justify-between items-center">
+                                <div>
+                                  <div className="font-medium text-sm">{option.name}</div>
+                                  {option.description && (
+                                    <div className="text-xs text-muted-foreground">{option.description}</div>
+                                  )}
+                                </div>
+                                {option.price_modifier !== 0 && (
+                                  <div className="text-sm font-medium">+₹{option.price_modifier}</div>
+                                )}
+                              </div>
+                            </button>
+                          ))}
+                        </div>
                       </div>
                     </TabsContent>
 
-                    <TabsContent value="extras" className="space-y-4">
+                    <TabsContent value="extras" className="space-y-6 mt-4">
                       {/* Mounting */}
                       <div>
                         <Label className="text-base font-medium">Mounting & Backing</Label>
-                        <Select
-                          value={frameConfig.mounting}
-                          onValueChange={(mounting) => setFrameConfig({ ...frameConfig, mounting })}
-                        >
-                          <SelectTrigger className="mt-2">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="paper">Paper Backing</SelectItem>
-                            <SelectItem value="foam">Foam Board</SelectItem>
-                            <SelectItem value="archival">Archival Mounting</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <div className="grid grid-cols-1 gap-2 mt-2">
+                          {frameOptions.mounting.map((option) => (
+                            <button
+                              key={option.id}
+                              onClick={() => setFrameConfig({ ...frameConfig, mounting: option.name })}
+                              className={`p-3 border rounded-lg text-left transition-colors ${
+                                frameConfig.mounting === option.name
+                                  ? "border-primary bg-primary/10"
+                                  : "border-border hover:border-primary/50"
+                              }`}
+                            >
+                              <div className="flex justify-between items-center">
+                                <div>
+                                  <div className="font-medium text-sm">{option.name}</div>
+                                  {option.description && (
+                                    <div className="text-xs text-muted-foreground">{option.description}</div>
+                                  )}
+                                </div>
+                                {option.price_modifier !== 0 && (
+                                  <div className="text-sm font-medium">+₹{option.price_modifier}</div>
+                                )}
+                              </div>
+                            </button>
+                          ))}
+                        </div>
                       </div>
 
                       {/* Engraving */}
                       <div>
                         <Label className="text-base font-medium">Custom Engraving (+₹399)</Label>
                         <Input
-                          placeholder="Enter text for engraving"
+                          placeholder="Enter text for engraving (max 30 characters)"
                           value={frameConfig.engraving}
-                          onChange={(e) => setFrameConfig({ ...frameConfig, engraving: e.target.value })}
+                          onChange={(e) => setFrameConfig({ ...frameConfig, engraving: e.target.value.slice(0, 30) })}
                           className="mt-2"
+                          maxLength={30}
                         />
                         <p className="text-xs text-muted-foreground mt-1">
-                          Maximum 30 characters. Available on wood frames only.
+                          {frameConfig.engraving.length}/30 characters
                         </p>
-                      </div>
-
-                      {/* Hanging Hardware */}
-                      <div>
-                        <Label className="text-base font-medium">Hanging Hardware</Label>
-                        <div className="mt-2 space-y-2">
-                          <label className="flex items-center space-x-2">
-                            <input type="checkbox" defaultChecked />
-                            <span className="text-sm">Wire hanging system (included)</span>
-                          </label>
-                          <label className="flex items-center space-x-2">
-                            <input type="checkbox" />
-                            <span className="text-sm">Installation kit (+₹99)</span>
-                          </label>
-                        </div>
                       </div>
                     </TabsContent>
                   </Tabs>
@@ -457,7 +822,7 @@ const CustomBuilder = () => {
             )}
 
             {/* Action Buttons */}
-            <div className="flex gap-3">
+            <div className="flex flex-wrap gap-3">
               {currentStep > 1 && (
                 <Button
                   variant="outline"
@@ -468,13 +833,26 @@ const CustomBuilder = () => {
                 </Button>
               )}
               
+              {currentStep < 4 && uploadedImage && (
+                <Button
+                  onClick={() => setCurrentStep(currentStep + 1)}
+                >
+                  Next
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Button>
+              )}
+              
               {uploadedImage && (
                 <>
-                  <Button variant="outline" size="sm">
-                    <Save className="h-4 w-4 mr-2" />
+                  <Button 
+                    variant="outline" 
+                    onClick={handleSaveDesign}
+                    disabled={saving}
+                  >
+                    {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
                     Save Design
                   </Button>
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" onClick={handleShare}>
                     <Share2 className="h-4 w-4 mr-2" />
                     Share
                   </Button>
@@ -484,6 +862,47 @@ const CustomBuilder = () => {
           </div>
         </div>
       </div>
+
+      {/* Share Dialog */}
+      <Dialog open={shareDialogOpen} onOpenChange={setShareDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Share Your Design</DialogTitle>
+            <DialogDescription>
+              Copy the link below to share your custom frame design with others.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex gap-2">
+            <Input value={shareLink} readOnly className="flex-1" />
+            <Button onClick={copyShareLink}>
+              <Copy className="h-4 w-4" />
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Success Dialog */}
+      <Dialog open={successDialogOpen} onOpenChange={setSuccessDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Check className="h-5 w-5 text-green-500" />
+              Added to Cart!
+            </DialogTitle>
+            <DialogDescription>
+              Your custom frame has been added to your cart successfully.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex gap-3 mt-4">
+            <Button variant="outline" onClick={() => setSuccessDialogOpen(false)} className="flex-1">
+              Continue Designing
+            </Button>
+            <Button onClick={() => navigate('/cart')} className="flex-1">
+              View Cart
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Footer />
     </div>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, Search, Edit, Trash2, Frame } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Frame, Upload, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -45,9 +45,20 @@ interface FrameOption {
   created_at: string;
 }
 
+const CATEGORIES = [
+  { value: 'material', label: 'Material', color: 'bg-blue-600' },
+  { value: 'size', label: 'Size', color: 'bg-green-600' },
+  { value: 'color', label: 'Color', color: 'bg-purple-600' },
+  { value: 'finish', label: 'Finish', color: 'bg-orange-600' },
+  { value: 'matting', label: 'Matting', color: 'bg-pink-600' },
+  { value: 'glazing', label: 'Glazing', color: 'bg-cyan-600' },
+  { value: 'mounting', label: 'Mounting', color: 'bg-yellow-600' },
+];
+
 const AdminFrameBuilder = () => {
   const [options, setOptions] = useState<FrameOption[]>([]);
   const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -81,6 +92,45 @@ const AdminFrameBuilder = () => {
       toast.error('Failed to load frame options');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please upload an image file');
+      return;
+    }
+
+    setUploading(true);
+
+    try {
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.jpg`;
+      const filePath = `options/${fileName}`;
+
+      const { data, error } = await supabase.storage
+        .from('frame-options')
+        .upload(filePath, file, {
+          contentType: file.type,
+          upsert: true,
+        });
+
+      if (error) throw error;
+
+      const { data: urlData } = supabase.storage
+        .from('frame-options')
+        .getPublicUrl(data.path);
+
+      setFormData(prev => ({ ...prev, image_url: urlData.publicUrl }));
+      toast.success('Image uploaded successfully');
+    } catch (error: any) {
+      console.error('Upload error:', error);
+      toast.error(error.message || 'Failed to upload image');
+    } finally {
+      setUploading(false);
+      event.target.value = '';
     }
   };
 
@@ -165,15 +215,15 @@ const AdminFrameBuilder = () => {
     return matchesSearch && matchesCategory;
   });
 
-  const getCategoryBadgeColor = (category: string) => {
-    switch (category) {
-      case 'material': return 'bg-blue-600';
-      case 'size': return 'bg-green-600';
-      case 'color': return 'bg-purple-600';
-      case 'finish': return 'bg-orange-600';
-      default: return 'bg-slate-600';
-    }
+  const getCategoryConfig = (category: string) => {
+    return CATEGORIES.find(c => c.value === category) || { label: category, color: 'bg-slate-600' };
   };
+
+  // Group options by category for stats
+  const categoryStats = CATEGORIES.map(cat => ({
+    ...cat,
+    count: options.filter(o => o.category === cat.value).length,
+  }));
 
   if (loading) {
     return (
@@ -194,10 +244,10 @@ const AdminFrameBuilder = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold text-white mb-2">Frame Builder Options</h1>
-          <p className="text-slate-400">{options.length} total options</p>
+          <p className="text-slate-400">{options.length} total options across {CATEGORIES.length} categories</p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={(open) => {
           setDialogOpen(open);
@@ -217,52 +267,19 @@ const AdminFrameBuilder = () => {
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="category">Category</Label>
-                <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
-                  <SelectTrigger className="bg-slate-800 border-slate-700">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-slate-900 border-slate-700">
-                    <SelectItem value="material">Material</SelectItem>
-                    <SelectItem value="size">Size</SelectItem>
-                    <SelectItem value="color">Color</SelectItem>
-                    <SelectItem value="finish">Finish</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="name">Option Name</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="bg-slate-800 border-slate-700"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="bg-slate-800 border-slate-700"
-                  rows={3}
-                />
-              </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="price_modifier">Price Modifier (₹)</Label>
-                  <Input
-                    id="price_modifier"
-                    type="number"
-                    step="0.01"
-                    value={formData.price_modifier}
-                    onChange={(e) => setFormData({ ...formData, price_modifier: parseFloat(e.target.value) })}
-                    className="bg-slate-800 border-slate-700"
-                    required
-                  />
+                  <Label htmlFor="category">Category</Label>
+                  <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
+                    <SelectTrigger className="bg-slate-800 border-slate-700">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-900 border-slate-700">
+                      {CATEGORIES.map(cat => (
+                        <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="sort_order">Sort Order</Label>
@@ -277,14 +294,68 @@ const AdminFrameBuilder = () => {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="image_url">Image URL</Label>
+                <Label htmlFor="name">Option Name</Label>
                 <Input
-                  id="image_url"
-                  value={formData.image_url}
-                  onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   className="bg-slate-800 border-slate-700"
-                  placeholder="https://example.com/image.jpg"
+                  placeholder="e.g., Oak Wood, 8x10 inches"
+                  required
                 />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  className="bg-slate-800 border-slate-700"
+                  placeholder="Brief description of this option"
+                  rows={3}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="price_modifier">Price Modifier (₹)</Label>
+                <Input
+                  id="price_modifier"
+                  type="number"
+                  step="0.01"
+                  value={formData.price_modifier}
+                  onChange={(e) => setFormData({ ...formData, price_modifier: parseFloat(e.target.value) })}
+                  className="bg-slate-800 border-slate-700"
+                  required
+                />
+                <p className="text-xs text-slate-500">
+                  Use positive values to add to base price, negative to subtract
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label>Option Image</Label>
+                <div className="flex items-center gap-4">
+                  {formData.image_url && (
+                    <img 
+                      src={formData.image_url} 
+                      alt="Option preview" 
+                      className="w-16 h-16 object-cover rounded-lg border border-slate-700"
+                    />
+                  )}
+                  <label className="flex items-center gap-2 px-4 py-2 bg-slate-800 rounded-lg cursor-pointer hover:bg-slate-700 transition-colors">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                      disabled={uploading}
+                    />
+                    {uploading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Upload className="h-4 w-4" />
+                    )}
+                    <span className="text-sm">{uploading ? 'Uploading...' : 'Upload Image'}</span>
+                  </label>
+                </div>
               </div>
               <div className="flex items-center space-x-2">
                 <Switch
@@ -292,7 +363,7 @@ const AdminFrameBuilder = () => {
                   checked={formData.available}
                   onCheckedChange={(checked) => setFormData({ ...formData, available: checked })}
                 />
-                <Label htmlFor="available">Available</Label>
+                <Label htmlFor="available">Available for customers</Label>
               </div>
               <div className="flex justify-end gap-2">
                 <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
@@ -305,6 +376,24 @@ const AdminFrameBuilder = () => {
             </form>
           </DialogContent>
         </Dialog>
+      </div>
+
+      {/* Category Stats */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+        {categoryStats.map(cat => (
+          <button
+            key={cat.value}
+            onClick={() => setCategoryFilter(categoryFilter === cat.value ? 'all' : cat.value)}
+            className={`p-3 rounded-lg text-center transition-all ${
+              categoryFilter === cat.value 
+                ? `${cat.color} text-white` 
+                : 'bg-slate-800/50 text-slate-300 hover:bg-slate-800'
+            }`}
+          >
+            <div className="text-2xl font-bold">{cat.count}</div>
+            <div className="text-xs">{cat.label}</div>
+          </button>
+        ))}
       </div>
 
       <Card className="bg-slate-800/50 border-slate-700">
@@ -325,10 +414,9 @@ const AdminFrameBuilder = () => {
               </SelectTrigger>
               <SelectContent className="bg-slate-900 border-slate-700">
                 <SelectItem value="all">All Categories</SelectItem>
-                <SelectItem value="material">Material</SelectItem>
-                <SelectItem value="size">Size</SelectItem>
-                <SelectItem value="color">Color</SelectItem>
-                <SelectItem value="finish">Finish</SelectItem>
+                {CATEGORIES.map(cat => (
+                  <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -339,8 +427,9 @@ const AdminFrameBuilder = () => {
                 <TableRow className="bg-slate-900/50 hover:bg-slate-900/50 border-slate-700">
                   <TableHead className="text-slate-300">Category</TableHead>
                   <TableHead className="text-slate-300">Name</TableHead>
+                  <TableHead className="text-slate-300">Description</TableHead>
                   <TableHead className="text-slate-300">Price Modifier</TableHead>
-                  <TableHead className="text-slate-300">Sort Order</TableHead>
+                  <TableHead className="text-slate-300">Order</TableHead>
                   <TableHead className="text-slate-300">Status</TableHead>
                   <TableHead className="text-slate-300 text-right">Actions</TableHead>
                 </TableRow>
@@ -348,7 +437,7 @@ const AdminFrameBuilder = () => {
               <TableBody>
                 {filteredOptions.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-slate-400">
+                    <TableCell colSpan={7} className="text-center py-8 text-slate-400">
                       <Frame className="h-12 w-12 mx-auto mb-3 opacity-50" />
                       <p>No frame options found</p>
                     </TableCell>
@@ -357,16 +446,32 @@ const AdminFrameBuilder = () => {
                   filteredOptions.map((option) => (
                     <TableRow key={option.id} className="border-slate-700 hover:bg-slate-800/30">
                       <TableCell>
-                        <Badge className={getCategoryBadgeColor(option.category)}>
-                          {option.category}
+                        <Badge className={getCategoryConfig(option.category).color}>
+                          {getCategoryConfig(option.category).label}
                         </Badge>
                       </TableCell>
-                      <TableCell className="font-medium text-white">{option.name}</TableCell>
-                      <TableCell className="text-slate-300">₹{option.price_modifier.toFixed(2)}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          {option.image_url && (
+                            <img 
+                              src={option.image_url} 
+                              alt={option.name}
+                              className="w-8 h-8 rounded object-cover"
+                            />
+                          )}
+                          <span className="font-medium text-white">{option.name}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-slate-400 max-w-xs truncate">
+                        {option.description || '-'}
+                      </TableCell>
+                      <TableCell className={option.price_modifier >= 0 ? 'text-green-400' : 'text-red-400'}>
+                        {option.price_modifier >= 0 ? '+' : ''}₹{option.price_modifier.toFixed(0)}
+                      </TableCell>
                       <TableCell className="text-slate-300">{option.sort_order}</TableCell>
                       <TableCell>
                         <Badge variant={option.available ? 'default' : 'secondary'}>
-                          {option.available ? 'Available' : 'Unavailable'}
+                          {option.available ? 'Active' : 'Inactive'}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">

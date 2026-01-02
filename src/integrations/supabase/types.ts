@@ -220,6 +220,47 @@ export type Database = {
         }
         Relationships: []
       }
+      custom_frame_orders: {
+        Row: {
+          created_at: string | null
+          frame_config: Json
+          id: string
+          image_url: string | null
+          saved_design_id: string | null
+          status: string | null
+          total_price: number
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          frame_config: Json
+          id?: string
+          image_url?: string | null
+          saved_design_id?: string | null
+          status?: string | null
+          total_price: number
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          frame_config?: Json
+          id?: string
+          image_url?: string | null
+          saved_design_id?: string | null
+          status?: string | null
+          total_price?: number
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_frame_orders_saved_design_id_fkey"
+            columns: ["saved_design_id"]
+            isOneToOne: false
+            referencedRelation: "saved_designs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_items: {
         Row: {
           created_at: string | null
@@ -464,6 +505,42 @@ export type Database = {
           id?: string
           phone?: string | null
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      saved_designs: {
+        Row: {
+          created_at: string | null
+          frame_config: Json
+          id: string
+          image_url: string | null
+          name: string
+          share_code: string | null
+          total_price: number
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          frame_config: Json
+          id?: string
+          image_url?: string | null
+          name?: string
+          share_code?: string | null
+          total_price: number
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          frame_config?: Json
+          id?: string
+          image_url?: string | null
+          name?: string
+          share_code?: string | null
+          total_price?: number
+          updated_at?: string | null
+          user_id?: string
         }
         Relationships: []
       }

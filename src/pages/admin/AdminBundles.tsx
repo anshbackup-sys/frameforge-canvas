@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, Search, Edit, Trash2, Package } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Package, X, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -17,6 +17,8 @@ import {
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface Bundle {
   id: string;
@@ -26,14 +28,29 @@ interface Bundle {
   discount_percentage: number;
   featured: boolean;
   created_at: string;
+  product_count?: number;
+}
+
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+  image_url: string | null;
+}
+
+interface BundleProduct {
+  product_id: string;
+  quantity: number;
 }
 
 const AdminBundles = () => {
   const [bundles, setBundles] = useState<Bundle[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingBundle, setEditingBundle] = useState<Bundle | null>(null);
+  const [selectedProducts, setSelectedProducts] = useState<BundleProduct[]>([]);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -44,17 +61,31 @@ const AdminBundles = () => {
 
   useEffect(() => {
     fetchBundles();
+    fetchProducts();
   }, []);
 
   const fetchBundles = async () => {
     try {
-      const { data, error } = await supabase
+      const { data: bundlesData, error } = await supabase
         .from('bundles')
         .select('*')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setBundles(data || []);
+
+      // Get product counts for each bundle
+      const bundlesWithCounts = await Promise.all(
+        (bundlesData || []).map(async (bundle) => {
+          const { count } = await supabase
+            .from('bundle_products')
+            .select('*', { count: 'exact', head: true })
+            .eq('bundle_id', bundle.id);
+          
+          return { ...bundle, product_count: count || 0 };
+        })
+      );
+
+      setBundles(bundlesWithCounts);
     } catch (error) {
       console.error('Error fetching bundles:', error);
       toast.error('Failed to load bundles');
@@ -63,10 +94,40 @@ const AdminBundles = () => {
     }
   };
 
+  const fetchProducts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select('id, name, price, image_url')
+        .order('name');
+
+      if (error) throw error;
+      setProducts(data || []);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+    }
+  };
+
+  const fetchBundleProducts = async (bundleId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('bundle_products')
+        .select('product_id, quantity')
+        .eq('bundle_id', bundleId);
+
+      if (error) throw error;
+      setSelectedProducts(data || []);
+    } catch (error) {
+      console.error('Error fetching bundle products:', error);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     try {
+      let bundleId: string;
+
       if (editingBundle) {
         const { error } = await supabase
           .from('bundles')
@@ -74,14 +135,40 @@ const AdminBundles = () => {
           .eq('id', editingBundle.id);
 
         if (error) throw error;
+        bundleId = editingBundle.id;
+
+        // Delete existing bundle products
+        await supabase
+          .from('bundle_products')
+          .delete()
+          .eq('bundle_id', bundleId);
+
         toast.success('Bundle updated successfully');
       } else {
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('bundles')
-          .insert([formData]);
+          .insert([formData])
+          .select()
+          .single();
 
         if (error) throw error;
+        bundleId = data.id;
         toast.success('Bundle created successfully');
+      }
+
+      // Insert new bundle products
+      if (selectedProducts.length > 0) {
+        const bundleProductsData = selectedProducts.map(sp => ({
+          bundle_id: bundleId,
+          product_id: sp.product_id,
+          quantity: sp.quantity,
+        }));
+
+        const { error: bpError } = await supabase
+          .from('bundle_products')
+          .insert(bundleProductsData);
+
+        if (bpError) throw bpError;
       }
 
       setDialogOpen(false);
@@ -97,6 +184,12 @@ const AdminBundles = () => {
     if (!confirm('Are you sure you want to delete this bundle?')) return;
 
     try {
+      // Delete bundle products first
+      await supabase
+        .from('bundle_products')
+        .delete()
+        .eq('bundle_id', id);
+
       const { error } = await supabase
         .from('bundles')
         .delete()
@@ -119,10 +212,11 @@ const AdminBundles = () => {
       discount_percentage: 0,
       featured: false,
     });
+    setSelectedProducts([]);
     setEditingBundle(null);
   };
 
-  const openEditDialog = (bundle: Bundle) => {
+  const openEditDialog = async (bundle: Bundle) => {
     setEditingBundle(bundle);
     setFormData({
       name: bundle.name,
@@ -131,7 +225,34 @@ const AdminBundles = () => {
       discount_percentage: bundle.discount_percentage,
       featured: bundle.featured,
     });
+    await fetchBundleProducts(bundle.id);
     setDialogOpen(true);
+  };
+
+  const toggleProduct = (productId: string) => {
+    setSelectedProducts(prev => {
+      const exists = prev.find(p => p.product_id === productId);
+      if (exists) {
+        return prev.filter(p => p.product_id !== productId);
+      } else {
+        return [...prev, { product_id: productId, quantity: 1 }];
+      }
+    });
+  };
+
+  const updateProductQuantity = (productId: string, quantity: number) => {
+    setSelectedProducts(prev =>
+      prev.map(p =>
+        p.product_id === productId ? { ...p, quantity: Math.max(1, quantity) } : p
+      )
+    );
+  };
+
+  const calculateBundleTotal = () => {
+    return selectedProducts.reduce((total, sp) => {
+      const product = products.find(p => p.id === sp.product_id);
+      return total + (product?.price || 0) * sp.quantity;
+    }, 0);
   };
 
   const filteredBundles = bundles.filter(bundle =>
@@ -168,65 +289,145 @@ const AdminBundles = () => {
               Add Bundle
             </Button>
           </DialogTrigger>
-          <DialogContent className="bg-slate-900 border-slate-700 text-white max-w-2xl">
+          <DialogContent className="bg-slate-900 border-slate-700 text-white max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{editingBundle ? 'Edit Bundle' : 'Create New Bundle'}</DialogTitle>
               <DialogDescription className="text-slate-400">
-                {editingBundle ? 'Update bundle details' : 'Add a new bundle to your store'}
+                {editingBundle ? 'Update bundle details and products' : 'Add a new bundle to your store'}
               </DialogDescription>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Bundle Name</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="bg-slate-800 border-slate-700"
-                  required
-                />
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Bundle Details */}
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Bundle Name</Label>
+                    <Input
+                      id="name"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      className="bg-slate-800 border-slate-700"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="description">Description</Label>
+                    <Textarea
+                      id="description"
+                      value={formData.description}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      className="bg-slate-800 border-slate-700"
+                      rows={4}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="image_url">Image URL</Label>
+                    <Input
+                      id="image_url"
+                      value={formData.image_url}
+                      onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
+                      className="bg-slate-800 border-slate-700"
+                      placeholder="https://example.com/image.jpg"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="discount">Discount Percentage</Label>
+                    <Input
+                      id="discount"
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={formData.discount_percentage}
+                      onChange={(e) => setFormData({ ...formData, discount_percentage: parseFloat(e.target.value) })}
+                      className="bg-slate-800 border-slate-700"
+                      required
+                    />
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="featured"
+                      checked={formData.featured}
+                      onCheckedChange={(checked) => setFormData({ ...formData, featured: checked })}
+                    />
+                    <Label htmlFor="featured">Featured Bundle</Label>
+                  </div>
+                </div>
+
+                {/* Product Selection */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <Label>Select Products</Label>
+                    <Badge variant="secondary">
+                      {selectedProducts.length} selected
+                    </Badge>
+                  </div>
+                  <ScrollArea className="h-80 border border-slate-700 rounded-lg p-4">
+                    <div className="space-y-2">
+                      {products.map((product) => {
+                        const isSelected = selectedProducts.some(p => p.product_id === product.id);
+                        const bundleProduct = selectedProducts.find(p => p.product_id === product.id);
+                        
+                        return (
+                          <div
+                            key={product.id}
+                            className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${
+                              isSelected ? 'bg-blue-600/20 border border-blue-600' : 'bg-slate-800 hover:bg-slate-700'
+                            }`}
+                          >
+                            <Checkbox
+                              checked={isSelected}
+                              onCheckedChange={() => toggleProduct(product.id)}
+                            />
+                            <img
+                              src={product.image_url || '/placeholder.svg'}
+                              alt={product.name}
+                              className="w-10 h-10 rounded object-cover"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-white truncate">{product.name}</p>
+                              <p className="text-xs text-slate-400">₹{product.price.toLocaleString()}</p>
+                            </div>
+                            {isSelected && (
+                              <div className="flex items-center gap-2">
+                                <Label className="text-xs text-slate-400">Qty:</Label>
+                                <Input
+                                  type="number"
+                                  min="1"
+                                  value={bundleProduct?.quantity || 1}
+                                  onChange={(e) => updateProductQuantity(product.id, parseInt(e.target.value))}
+                                  className="w-16 h-8 bg-slate-700 border-slate-600 text-sm"
+                                />
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </ScrollArea>
+                  
+                  {selectedProducts.length > 0 && (
+                    <div className="p-4 bg-slate-800 rounded-lg">
+                      <div className="flex justify-between text-sm mb-2">
+                        <span className="text-slate-400">Original Total:</span>
+                        <span className="text-white">₹{calculateBundleTotal().toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between text-sm mb-2">
+                        <span className="text-slate-400">Discount ({formData.discount_percentage}%):</span>
+                        <span className="text-green-400">
+                          -₹{(calculateBundleTotal() * formData.discount_percentage / 100).toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="flex justify-between font-bold pt-2 border-t border-slate-700">
+                        <span className="text-white">Bundle Price:</span>
+                        <span className="text-white">
+                          ₹{(calculateBundleTotal() * (1 - formData.discount_percentage / 100)).toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="bg-slate-800 border-slate-700"
-                  rows={4}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="image_url">Image URL</Label>
-                <Input
-                  id="image_url"
-                  value={formData.image_url}
-                  onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                  className="bg-slate-800 border-slate-700"
-                  placeholder="https://example.com/image.jpg"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="discount">Discount Percentage</Label>
-                <Input
-                  id="discount"
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={formData.discount_percentage}
-                  onChange={(e) => setFormData({ ...formData, discount_percentage: parseFloat(e.target.value) })}
-                  className="bg-slate-800 border-slate-700"
-                  required
-                />
-              </div>
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="featured"
-                  checked={formData.featured}
-                  onCheckedChange={(checked) => setFormData({ ...formData, featured: checked })}
-                />
-                <Label htmlFor="featured">Featured Bundle</Label>
-              </div>
+
               <div className="flex justify-end gap-2">
                 <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
                   Cancel
@@ -283,7 +484,10 @@ const AdminBundles = () => {
                     )}
                   </div>
                   <CardContent className="p-4">
-                    <h3 className="text-lg font-semibold text-white mb-2">{bundle.name}</h3>
+                    <h3 className="text-lg font-semibold text-white mb-1">{bundle.name}</h3>
+                    <p className="text-sm text-slate-400 mb-2">
+                      {bundle.product_count} products included
+                    </p>
                     <p className="text-sm text-slate-400 mb-4 line-clamp-2">
                       {bundle.description || 'No description'}
                     </p>
