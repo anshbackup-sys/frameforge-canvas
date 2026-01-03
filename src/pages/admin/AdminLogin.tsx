@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Eye, EyeOff, Mail, Lock, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,14 +15,19 @@ const AdminLogin = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loginData, setLoginData] = useState({ email: "", password: "" });
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const { isAdmin, checkAdminStatus } = useAdmin();
+  const location = useLocation();
+  const { user, loading: authLoading } = useAuth();
+  const { isAdmin, loading: adminLoading, checkAdminStatus } = useAdmin();
 
+  // Redirect if already logged in as admin
   useEffect(() => {
+    if (authLoading || adminLoading) return;
+    
     if (user && isAdmin) {
-      navigate("/admin");
+      const from = (location.state as any)?.from || '/admin';
+      navigate(from, { replace: true });
     }
-  }, [user, isAdmin, navigate]);
+  }, [user, isAdmin, authLoading, adminLoading, navigate, location.state]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,6 +45,7 @@ const AdminLogin = () => {
         return;
       }
 
+      // Wait a moment for auth state to update, then check admin status
       const isAdminUser = await checkAdminStatus();
 
       if (!isAdminUser) {
@@ -50,7 +56,8 @@ const AdminLogin = () => {
       }
 
       toast.success("Welcome to Admin Panel");
-      navigate("/admin");
+      const from = (location.state as any)?.from || '/admin';
+      navigate(from, { replace: true });
     } catch (error) {
       console.error('Login error:', error);
       toast.error("An error occurred during login");
@@ -58,6 +65,15 @@ const AdminLogin = () => {
       setIsLoading(false);
     }
   };
+
+  // Show loading while checking existing session
+  if (authLoading || adminLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
+        <div className="animate-spin h-8 w-8 border-2 border-blue-500 border-t-transparent rounded-full" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">

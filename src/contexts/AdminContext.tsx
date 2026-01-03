@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
 import { useAuth } from './AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -13,12 +13,11 @@ const AdminContext = createContext<AdminContextType | undefined>(undefined);
 export const AdminProvider = ({ children }: { children: ReactNode }) => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
 
-  const checkAdminStatus = async (): Promise<boolean> => {
+  const checkAdminStatus = useCallback(async (): Promise<boolean> => {
     if (!user) {
       setIsAdmin(false);
-      setLoading(false);
       return false;
     }
 
@@ -33,25 +32,40 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
       if (error) {
         console.error('Error checking admin status:', error);
         setIsAdmin(false);
-        setLoading(false);
         return false;
       }
 
       const adminStatus = !!data;
       setIsAdmin(adminStatus);
-      setLoading(false);
       return adminStatus;
     } catch (error) {
       console.error('Error checking admin status:', error);
       setIsAdmin(false);
-      setLoading(false);
       return false;
     }
-  };
+  }, [user]);
 
   useEffect(() => {
-    checkAdminStatus();
-  }, [user]);
+    // Wait for auth to finish loading before checking admin status
+    if (authLoading) {
+      setLoading(true);
+      return;
+    }
+
+    if (!user) {
+      setIsAdmin(false);
+      setLoading(false);
+      return;
+    }
+
+    const checkStatus = async () => {
+      setLoading(true);
+      await checkAdminStatus();
+      setLoading(false);
+    };
+
+    checkStatus();
+  }, [user, authLoading, checkAdminStatus]);
 
   return (
     <AdminContext.Provider value={{ isAdmin, loading, checkAdminStatus }}>

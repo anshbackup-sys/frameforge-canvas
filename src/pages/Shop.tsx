@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { Filter, Grid, List, Star, X } from "lucide-react";
+import { Filter, Grid, List, Star, X, ChevronDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ProductCard from "@/components/ProductCard";
@@ -32,6 +33,14 @@ const Shop = () => {
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState(searchParams.get('sort') || 'featured');
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  
+  // Collapsible states
+  const [openSections, setOpenSections] = useState({
+    price: true,
+    category: true,
+    size: true,
+    rating: true,
+  });
   
   const [filters, setFilters] = useState<FilterState>({
     categories: searchParams.getAll('category'),
@@ -190,34 +199,67 @@ const Shop = () => {
     (filters.minRating > 0 ? 1 : 0) + 
     (filters.priceRange[0] > 0 || filters.priceRange[1] < 10000 ? 1 : 0);
 
+  const toggleSection = (section: keyof typeof openSections) => {
+    setOpenSections(prev => ({ ...prev, [section]: !prev[section] }));
+  };
+
   const FilterContent = () => (
-    <div className="space-y-6">
+    <div className="space-y-1">
       {/* Active Filters */}
       {activeFilterCount > 0 && (
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <h4 className="font-medium text-sm">Active Filters</h4>
-            <Button variant="ghost" size="sm" onClick={clearFilters} className="h-auto p-0 text-primary">
+        <div className="pb-4 mb-4 border-b border-border">
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="font-semibold text-sm text-foreground">Active Filters</h4>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={clearFilters} 
+              className="h-auto py-1 px-2 text-xs text-primary hover:text-primary/80 hover:bg-primary/10"
+            >
               Clear All
             </Button>
           </div>
           <div className="flex flex-wrap gap-2">
             {filters.categories.map(cat => (
-              <Badge key={cat} variant="secondary" className="gap-1">
+              <Badge 
+                key={cat} 
+                variant="secondary" 
+                className="gap-1 pl-2 pr-1 py-1 bg-primary/10 text-primary border-primary/20 hover:bg-primary/20 cursor-pointer transition-colors"
+                onClick={() => toggleCategory(cat)}
+              >
                 {cat}
-                <X className="h-3 w-3 cursor-pointer" onClick={() => toggleCategory(cat)} />
+                <X className="h-3 w-3 ml-1" />
               </Badge>
             ))}
             {filters.sizes.map(size => (
-              <Badge key={size} variant="secondary" className="gap-1">
+              <Badge 
+                key={size} 
+                variant="secondary" 
+                className="gap-1 pl-2 pr-1 py-1 bg-primary/10 text-primary border-primary/20 hover:bg-primary/20 cursor-pointer transition-colors"
+                onClick={() => toggleSize(size)}
+              >
                 {size}
-                <X className="h-3 w-3 cursor-pointer" onClick={() => toggleSize(size)} />
+                <X className="h-3 w-3 ml-1" />
               </Badge>
             ))}
             {filters.minRating > 0 && (
-              <Badge variant="secondary" className="gap-1">
+              <Badge 
+                variant="secondary" 
+                className="gap-1 pl-2 pr-1 py-1 bg-primary/10 text-primary border-primary/20 hover:bg-primary/20 cursor-pointer transition-colors"
+                onClick={() => setFilters(prev => ({ ...prev, minRating: 0 }))}
+              >
                 {filters.minRating}+ Stars
-                <X className="h-3 w-3 cursor-pointer" onClick={() => setFilters(prev => ({ ...prev, minRating: 0 }))} />
+                <X className="h-3 w-3 ml-1" />
+              </Badge>
+            )}
+            {(filters.priceRange[0] > 0 || filters.priceRange[1] < 10000) && (
+              <Badge 
+                variant="secondary" 
+                className="gap-1 pl-2 pr-1 py-1 bg-primary/10 text-primary border-primary/20 hover:bg-primary/20 cursor-pointer transition-colors"
+                onClick={() => setFilters(prev => ({ ...prev, priceRange: [0, 10000] }))}
+              >
+                ₹{filters.priceRange[0]} - ₹{filters.priceRange[1]}
+                <X className="h-3 w-3 ml-1" />
               </Badge>
             )}
           </div>
@@ -225,95 +267,138 @@ const Shop = () => {
       )}
 
       {/* Price Range */}
-      <div className="space-y-4 pb-6 border-b">
-        <h4 className="font-medium">Price Range</h4>
-        <Slider
-          value={filters.priceRange}
-          onValueChange={(value) => setFilters(prev => ({ ...prev, priceRange: value as [number, number] }))}
-          max={10000}
-          step={100}
-          className="w-full"
-        />
-        <div className="flex justify-between text-sm text-muted-foreground">
-          <span>₹{filters.priceRange[0].toLocaleString()}</span>
-          <span>₹{filters.priceRange[1].toLocaleString()}</span>
-        </div>
-      </div>
+      <Collapsible open={openSections.price} onOpenChange={() => toggleSection('price')}>
+        <CollapsibleTrigger className="flex items-center justify-between w-full py-3 border-b border-border group">
+          <h4 className="font-semibold text-sm text-foreground">Price Range</h4>
+          <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${openSections.price ? 'rotate-180' : ''}`} />
+        </CollapsibleTrigger>
+        <CollapsibleContent className="pt-4 pb-4">
+          <Slider
+            value={filters.priceRange}
+            onValueChange={(value) => setFilters(prev => ({ ...prev, priceRange: value as [number, number] }))}
+            max={10000}
+            step={100}
+            className="w-full mb-4"
+          />
+          <div className="flex justify-between items-center">
+            <div className="px-3 py-1.5 bg-muted rounded-md text-sm font-medium">
+              ₹{filters.priceRange[0].toLocaleString()}
+            </div>
+            <div className="h-px w-4 bg-border" />
+            <div className="px-3 py-1.5 bg-muted rounded-md text-sm font-medium">
+              ₹{filters.priceRange[1].toLocaleString()}
+            </div>
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
 
       {/* Category */}
-      <div className="space-y-3 pb-6 border-b">
-        <h4 className="font-medium">Category</h4>
-        <div className="space-y-2">
-          {Object.entries(filterCounts.categories).map(([category, count]) => (
-            <label key={category} className="flex items-center space-x-2 cursor-pointer">
-              <Checkbox 
-                checked={filters.categories.includes(category)}
-                onCheckedChange={() => toggleCategory(category)}
-              />
-              <span className="text-sm flex-1">{category}</span>
-              <span className="text-xs text-muted-foreground">({count})</span>
-            </label>
-          ))}
-        </div>
-      </div>
+      <Collapsible open={openSections.category} onOpenChange={() => toggleSection('category')}>
+        <CollapsibleTrigger className="flex items-center justify-between w-full py-3 border-b border-border group">
+          <h4 className="font-semibold text-sm text-foreground">Category</h4>
+          <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${openSections.category ? 'rotate-180' : ''}`} />
+        </CollapsibleTrigger>
+        <CollapsibleContent className="pt-3 pb-4">
+          <div className="space-y-2">
+            {Object.entries(filterCounts.categories).map(([category, count]) => (
+              <label 
+                key={category} 
+                className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-colors ${
+                  filters.categories.includes(category) 
+                    ? 'bg-primary/10 border border-primary/20' 
+                    : 'hover:bg-muted border border-transparent'
+                }`}
+              >
+                <Checkbox 
+                  checked={filters.categories.includes(category)}
+                  onCheckedChange={() => toggleCategory(category)}
+                  className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                />
+                <span className="text-sm flex-1 font-medium">{category}</span>
+                <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">{count}</span>
+              </label>
+            ))}
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
 
       {/* Size */}
-      <div className="space-y-3 pb-6 border-b">
-        <h4 className="font-medium">Size</h4>
-        <div className="space-y-2">
-          {Object.entries(filterCounts.sizes).map(([size, count]) => (
-            <label key={size} className="flex items-center space-x-2 cursor-pointer">
-              <Checkbox 
-                checked={filters.sizes.includes(size)}
-                onCheckedChange={() => toggleSize(size)}
-              />
-              <span className="text-sm flex-1">{size}</span>
-              <span className="text-xs text-muted-foreground">({count})</span>
-            </label>
-          ))}
-        </div>
-      </div>
+      <Collapsible open={openSections.size} onOpenChange={() => toggleSection('size')}>
+        <CollapsibleTrigger className="flex items-center justify-between w-full py-3 border-b border-border group">
+          <h4 className="font-semibold text-sm text-foreground">Size</h4>
+          <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${openSections.size ? 'rotate-180' : ''}`} />
+        </CollapsibleTrigger>
+        <CollapsibleContent className="pt-3 pb-4">
+          <div className="flex flex-wrap gap-2">
+            {Object.entries(filterCounts.sizes).map(([size, count]) => (
+              <button
+                key={size}
+                onClick={() => toggleSize(size)}
+                className={`px-3 py-2 text-sm rounded-lg border transition-all duration-200 ${
+                  filters.sizes.includes(size)
+                    ? 'bg-primary text-primary-foreground border-primary shadow-sm'
+                    : 'bg-background border-border hover:border-primary/50 hover:bg-muted'
+                }`}
+              >
+                {size}
+                <span className="ml-1.5 text-xs opacity-70">({count})</span>
+              </button>
+            ))}
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
 
       {/* Rating */}
-      <div className="space-y-3">
-        <h4 className="font-medium">Minimum Rating</h4>
-        <div className="space-y-2">
-          {[4, 3, 2].map((rating) => (
-            <label key={rating} className="flex items-center space-x-2 cursor-pointer">
-              <Checkbox 
-                checked={filters.minRating === rating}
-                onCheckedChange={() => setFilters(prev => ({ 
+      <Collapsible open={openSections.rating} onOpenChange={() => toggleSection('rating')}>
+        <CollapsibleTrigger className="flex items-center justify-between w-full py-3 border-b border-border group">
+          <h4 className="font-semibold text-sm text-foreground">Minimum Rating</h4>
+          <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${openSections.rating ? 'rotate-180' : ''}`} />
+        </CollapsibleTrigger>
+        <CollapsibleContent className="pt-3 pb-4">
+          <div className="space-y-2">
+            {[4, 3, 2].map((rating) => (
+              <button
+                key={rating}
+                onClick={() => setFilters(prev => ({ 
                   ...prev, 
                   minRating: prev.minRating === rating ? 0 : rating 
                 }))}
-              />
-              <div className="flex items-center gap-1">
-                {[...Array(5)].map((_, i) => (
-                  <Star
-                    key={i}
-                    className={`h-3 w-3 ${
-                      i < rating ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/30"
-                    }`}
-                  />
-                ))}
-                <span className="text-sm ml-1">& up</span>
-              </div>
-            </label>
-          ))}
-        </div>
-      </div>
+                className={`flex items-center gap-2 w-full p-2 rounded-lg transition-colors ${
+                  filters.minRating === rating
+                    ? 'bg-primary/10 border border-primary/20'
+                    : 'hover:bg-muted border border-transparent'
+                }`}
+              >
+                <div className="flex items-center gap-0.5">
+                  {[...Array(5)].map((_, i) => (
+                    <Star
+                      key={i}
+                      className={`h-4 w-4 ${
+                        i < rating ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/30"
+                      }`}
+                    />
+                  ))}
+                </div>
+                <span className="text-sm font-medium">& up</span>
+              </button>
+            ))}
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
     </div>
   );
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-background">
       <Header />
       
       {/* Breadcrumb */}
-      <div className="bg-muted/30 py-4">
+      <div className="bg-muted/30 py-4 border-b border-border">
         <div className="container-wide">
           <nav className="text-sm text-muted-foreground">
-            Home › Shop
+            <span className="hover:text-foreground cursor-pointer">Home</span>
+            <span className="mx-2">›</span>
+            <span className="text-foreground font-medium">Shop</span>
           </nav>
         </div>
       </div>
@@ -321,49 +406,49 @@ const Shop = () => {
       <div className="container-wide py-8">
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Desktop Filters Sidebar */}
-          <aside className="hidden lg:block lg:w-64 space-y-6">
-            <h3 className="font-serif font-bold text-lg">Filters</h3>
-            <FilterContent />
+          <aside className="hidden lg:block lg:w-72 flex-shrink-0">
+            <div className="sticky top-24 bg-card rounded-xl border border-border p-5 shadow-sm">
+              <h3 className="font-serif font-bold text-lg mb-4 pb-3 border-b border-border">Filters</h3>
+              <FilterContent />
+            </div>
           </aside>
 
           {/* Main Content */}
-          <main className="flex-1">
+          <main className="flex-1 min-w-0">
             {/* Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
               <div>
-                <h1 className="text-3xl font-serif font-bold mb-2">All Frames</h1>
+                <h1 className="text-3xl font-serif font-bold mb-2 text-foreground">All Frames</h1>
                 <p className="text-muted-foreground">
-                  Showing {filteredProducts.length} of {products.length} products
+                  Showing <span className="font-medium text-foreground">{filteredProducts.length}</span> of {products.length} products
                 </p>
               </div>
 
-              <div className="flex items-center gap-4 w-full sm:w-auto">
+              <div className="flex items-center gap-3 w-full sm:w-auto">
                 {/* Mobile Filter Button */}
                 <Sheet open={mobileFiltersOpen} onOpenChange={setMobileFiltersOpen}>
                   <SheetTrigger asChild>
-                    <Button variant="outline" className="lg:hidden relative">
+                    <Button variant="outline" className="lg:hidden relative border-border">
                       <Filter className="h-4 w-4 mr-2" />
                       Filters
                       {activeFilterCount > 0 && (
-                        <Badge className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center">
+                        <Badge className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center text-xs">
                           {activeFilterCount}
                         </Badge>
                       )}
                     </Button>
                   </SheetTrigger>
-                  <SheetContent side="left" className="w-80 overflow-y-auto">
-                    <SheetHeader>
-                      <SheetTitle>Filters</SheetTitle>
+                  <SheetContent side="left" className="w-[320px] overflow-y-auto bg-background">
+                    <SheetHeader className="border-b border-border pb-4 mb-4">
+                      <SheetTitle className="font-serif">Filters</SheetTitle>
                     </SheetHeader>
-                    <div className="mt-6">
-                      <FilterContent />
-                    </div>
+                    <FilterContent />
                   </SheetContent>
                 </Sheet>
 
                 {/* Sort */}
                 <Select value={sortBy} onValueChange={setSortBy}>
-                  <SelectTrigger className="w-full sm:w-48">
+                  <SelectTrigger className="w-full sm:w-48 border-border">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -376,11 +461,12 @@ const Shop = () => {
                 </Select>
 
                 {/* View Toggle */}
-                <div className="hidden sm:flex border rounded-lg">
+                <div className="hidden sm:flex border border-border rounded-lg overflow-hidden">
                   <Button
                     variant={viewMode === "grid" ? "default" : "ghost"}
                     size="sm"
                     onClick={() => setViewMode("grid")}
+                    className="rounded-none"
                   >
                     <Grid className="h-4 w-4" />
                   </Button>
@@ -388,6 +474,7 @@ const Shop = () => {
                     variant={viewMode === "list" ? "default" : "ghost"}
                     size="sm"
                     onClick={() => setViewMode("list")}
+                    className="rounded-none"
                   >
                     <List className="h-4 w-4" />
                   </Button>
@@ -397,24 +484,27 @@ const Shop = () => {
 
             {/* Products Grid */}
             {loading ? (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
                 {[1, 2, 3, 4, 5, 6].map(i => (
-                  <div key={i} className="aspect-[3/4] bg-muted animate-pulse rounded-lg" />
+                  <div key={i} className="aspect-[3/4] bg-muted animate-pulse rounded-xl" />
                 ))}
               </div>
             ) : filteredProducts.length === 0 ? (
-              <div className="text-center py-16">
-                <p className="text-muted-foreground mb-4">No products match your filters</p>
-                <Button onClick={clearFilters}>Clear Filters</Button>
+              <div className="text-center py-20 bg-muted/30 rounded-xl border border-border">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
+                  <Filter className="h-8 w-8 text-muted-foreground" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">No products found</h3>
+                <p className="text-muted-foreground mb-6">Try adjusting your filters to find what you're looking for</p>
+                <Button onClick={clearFilters} variant="outline">Clear All Filters</Button>
               </div>
             ) : (
-              <div className={viewMode === "grid" ? "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-6" : "space-y-4"}>
+              <div className={viewMode === "grid" ? "grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6" : "space-y-4"}>
                 {filteredProducts.map((product) => (
                   <ProductCard 
                     key={product.id} 
                     product={product} 
                     viewMode={viewMode}
-                    showQuickView={true}
                   />
                 ))}
               </div>
