@@ -265,7 +265,7 @@ const CustomBuilder = () => {
           user_id: user.id,
           name: `Custom Frame - ${new Date().toLocaleDateString()}`,
           image_url: uploadedImage,
-          frame_config: frameConfig as unknown as Record<string, unknown>,
+          frame_config: JSON.parse(JSON.stringify(frameConfig)),
           total_price: calculatePrice(),
           share_code: shareCode,
         }]);
@@ -293,7 +293,7 @@ const CustomBuilder = () => {
             user_id: user.id,
             name: `Shared Design - ${new Date().toLocaleDateString()}`,
             image_url: uploadedImage,
-            frame_config: frameConfig as unknown as Record<string, unknown>,
+            frame_config: JSON.parse(JSON.stringify(frameConfig)),
             total_price: calculatePrice(),
             share_code: shareCode,
           }]);
@@ -325,7 +325,7 @@ const CustomBuilder = () => {
         .insert([{
           user_id: user.id,
           image_url: uploadedImage,
-          frame_config: frameConfig as unknown as Record<string, unknown>,
+          frame_config: JSON.parse(JSON.stringify(frameConfig)),
           total_price: calculatePrice(),
           status: 'pending',
         }])
