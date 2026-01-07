@@ -128,6 +128,7 @@ export type Database = {
       cart_items: {
         Row: {
           created_at: string | null
+          custom_frame_order_id: string | null
           id: string
           product_id: string | null
           quantity: number | null
@@ -135,6 +136,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          custom_frame_order_id?: string | null
           id?: string
           product_id?: string | null
           quantity?: number | null
@@ -142,12 +144,20 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          custom_frame_order_id?: string | null
           id?: string
           product_id?: string | null
           quantity?: number | null
           user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "cart_items_custom_frame_order_id_fkey"
+            columns: ["custom_frame_order_id"]
+            isOneToOne: false
+            referencedRelation: "custom_frame_orders"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "cart_items_product_id_fkey"
             columns: ["product_id"]
@@ -507,6 +517,60 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      reviews: {
+        Row: {
+          comment: string | null
+          created_at: string | null
+          id: string
+          order_id: string | null
+          product_id: string
+          rating: number
+          title: string | null
+          updated_at: string | null
+          user_id: string
+          verified_purchase: boolean | null
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string | null
+          id?: string
+          order_id?: string | null
+          product_id: string
+          rating: number
+          title?: string | null
+          updated_at?: string | null
+          user_id: string
+          verified_purchase?: boolean | null
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string | null
+          id?: string
+          order_id?: string | null
+          product_id?: string
+          rating?: number
+          title?: string | null
+          updated_at?: string | null
+          user_id?: string
+          verified_purchase?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       saved_designs: {
         Row: {

@@ -22,6 +22,8 @@ import About from "./pages/About";
 import Bundles from "./pages/Bundles";
 import Collections from "./pages/Collections";
 import CollectionDetail from "./pages/CollectionDetail";
+import SearchResults from "./pages/SearchResults";
+import SavedDesigns from "./pages/SavedDesigns";
 import NotFound from "./pages/NotFound";
 import AdminLogin from "./pages/admin/AdminLogin";
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -65,6 +67,8 @@ const App = () => (
                   <Route path="/bundles" element={<Bundles />} />
                   <Route path="/collections" element={<Collections />} />
                   <Route path="/collection/:id" element={<CollectionDetail />} />
+                  <Route path="/search" element={<SearchResults />} />
+                  <Route path="/saved-designs" element={<SavedDesigns />} />
 
                   <Route path="/admin/login" element={<AdminLogin />} />
                   <Route

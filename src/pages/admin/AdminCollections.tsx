@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Plus, Search, Edit, Trash2, Image as ImageIcon, Tag } from 'lucide-react';
+import AdminImageUpload from '@/components/admin/AdminImageUpload';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -265,13 +266,12 @@ const AdminCollections = () => {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="image_url">Image URL</Label>
-                    <Input
-                      id="image_url"
-                      value={formData.image_url}
-                      onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                      className="bg-slate-800 border-slate-700"
-                      placeholder="https://example.com/image.jpg"
+                    <Label>Collection Image</Label>
+                    <AdminImageUpload
+                      bucket="product-images"
+                      folder="collections"
+                      currentImage={formData.image_url}
+                      onUpload={(url) => setFormData({ ...formData, image_url: url })}
                     />
                   </div>
                   <div className="flex items-center space-x-2">
