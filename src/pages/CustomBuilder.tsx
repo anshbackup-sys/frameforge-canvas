@@ -248,6 +248,35 @@ const CustomBuilder = () => {
     return Math.max(basePrice, 0);
   };
 
+  const uploadImageToStorage = async (imageDataUrl: string): Promise<string | null> => {
+    try {
+      // Convert data URL to blob
+      const response = await fetch(imageDataUrl);
+      const blob = await response.blob();
+      
+      const fileName = `design-${Date.now()}-${Math.random().toString(36).substring(2, 8)}.jpg`;
+      const filePath = `${user?.id}/${fileName}`;
+      
+      const { data, error } = await supabase.storage
+        .from('custom-designs')
+        .upload(filePath, blob, {
+          contentType: 'image/jpeg',
+          upsert: false
+        });
+
+      if (error) throw error;
+
+      const { data: urlData } = supabase.storage
+        .from('custom-designs')
+        .getPublicUrl(data.path);
+
+      return urlData.publicUrl;
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      return null;
+    }
+  };
+
   const handleSaveDesign = async () => {
     if (!user) {
       toast.error('Please sign in to save your design');
@@ -259,12 +288,21 @@ const CustomBuilder = () => {
     try {
       const shareCode = Math.random().toString(36).substring(2, 10);
       
+      // Upload image to storage if we have a processed image
+      let storedImageUrl = uploadedImage;
+      if (processedImage && processedImage.startsWith('data:')) {
+        const uploadedUrl = await uploadImageToStorage(processedImage);
+        if (uploadedUrl) {
+          storedImageUrl = uploadedUrl;
+        }
+      }
+      
       const { error } = await supabase
         .from('saved_designs')
         .insert([{
           user_id: user.id,
           name: `Custom Frame - ${new Date().toLocaleDateString()}`,
-          image_url: uploadedImage,
+          image_url: storedImageUrl,
           frame_config: JSON.parse(JSON.stringify(frameConfig)),
           total_price: calculatePrice(),
           share_code: shareCode,
