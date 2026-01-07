@@ -7,9 +7,9 @@ const Footer = () => {
       title: "Shop",
       links: [
         { name: "All Frames", href: "/shop" },
-        { name: "Wall Frames", href: "/shop" },
-        { name: "Tabletop Frames", href: "/shop" },
-        { name: "Gallery Sets", href: "/shop" },
+        { name: "Wall Frames", href: "/shop?category=wall" },
+        { name: "Tabletop Frames", href: "/shop?category=tabletop" },
+        { name: "Gallery Sets", href: "/shop?category=gallery" },
         { name: "Custom Frames", href: "/custom-builder" },
         { name: "Bundles", href: "/bundles" },
       ],
@@ -17,23 +17,22 @@ const Footer = () => {
     help: {
       title: "Help & Support",
       links: [
-        { name: "Size Guide", href: "/about" },
-        { name: "Shipping Info", href: "/about" },
-        { name: "Returns & Exchanges", href: "/about" },
-        { name: "Care Instructions", href: "/about" },
-        { name: "Contact Us", href: "/about" },
-        { name: "FAQ", href: "/about" },
+        { name: "Size Guide", href: "/size-guide" },
+        { name: "Shipping Info", href: "/shipping-info" },
+        { name: "Returns & Exchanges", href: "/returns" },
+        { name: "Care Instructions", href: "/care-instructions" },
+        { name: "Contact Us", href: "/contact" },
+        { name: "FAQ", href: "/faq" },
       ],
     },
     company: {
       title: "Company",
       links: [
         { name: "About Us", href: "/about" },
-        { name: "Our Story", href: "/about" },
-        { name: "Craftsmanship", href: "/about" },
-        { name: "Reviews", href: "/about" },
-        { name: "Press", href: "/about" },
-        { name: "Careers", href: "/about" },
+        { name: "Our Story", href: "/our-story" },
+        { name: "Craftsmanship", href: "/craftsmanship" },
+        { name: "Press", href: "/press" },
+        { name: "Careers", href: "/careers" },
       ],
     },
   };
@@ -158,14 +157,11 @@ const Footer = () => {
             </p>
             
             <div className="flex gap-6">
-              <Link to="/about" className="text-sm text-gray-400 hover:text-white transition-colors">
+              <Link to="/privacy-policy" className="text-sm text-gray-400 hover:text-white transition-colors">
                 Privacy Policy
               </Link>
-              <Link to="/about" className="text-sm text-gray-400 hover:text-white transition-colors">
+              <Link to="/terms-of-service" className="text-sm text-gray-400 hover:text-white transition-colors">
                 Terms of Service
-              </Link>
-              <Link to="/about" className="text-sm text-gray-400 hover:text-white transition-colors">
-                Cookie Policy
               </Link>
             </div>
           </div>

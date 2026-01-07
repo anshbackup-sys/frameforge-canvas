@@ -39,7 +39,6 @@ const AdminUsers = () => {
 
   const fetchUsers = async () => {
     try {
-      // Fetch all profiles with their roles
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
         .select('id, full_name, created_at');
@@ -62,7 +61,7 @@ const AdminUsers = () => {
       const usersWithDetails = profilesData.map(profile => {
         return {
           id: profile.id,
-          email: 'Email not available', // Email requires admin API access
+          email: 'Email not available',
           created_at: profile.created_at,
           profiles: { full_name: profile.full_name },
           user_roles: rolesData?.filter(r => r.user_id === profile.id).map(r => ({ role: r.role })) || [],
@@ -117,12 +116,12 @@ const AdminUsers = () => {
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="h-8 bg-slate-700 rounded w-48 animate-pulse"></div>
-        <Card className="bg-slate-800/50 border-slate-700">
+        <div className="h-8 bg-gray-200 rounded w-48 animate-pulse"></div>
+        <Card className="bg-white/80 backdrop-blur-sm border-gray-200 shadow-sm">
           <CardContent className="p-6">
             <div className="space-y-4">
               {[1, 2, 3, 4, 5].map(i => (
-                <div key={i} className="h-16 bg-slate-700 rounded animate-pulse"></div>
+                <div key={i} className="h-16 bg-gray-100 rounded animate-pulse"></div>
               ))}
             </div>
           </CardContent>
@@ -134,39 +133,39 @@ const AdminUsers = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-white mb-2">Users Management</h1>
-        <p className="text-slate-400">{users.length} total users</p>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Users Management</h1>
+        <p className="text-gray-600">{users.length} total users</p>
       </div>
 
-      <Card className="bg-slate-800/50 border-slate-700">
+      <Card className="bg-white/80 backdrop-blur-sm border-gray-200 shadow-sm">
         <CardContent className="p-6">
           <div className="mb-6">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
                 placeholder="Search users by email or name..."
-                className="pl-10 bg-slate-900 border-slate-700 text-white"
+                className="pl-10 bg-white border-gray-300 text-gray-900 focus:border-primary focus:ring-primary"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
           </div>
 
-          <div className="rounded-lg border border-slate-700 overflow-hidden">
+          <div className="rounded-lg border border-gray-200 overflow-hidden">
             <Table>
               <TableHeader>
-                <TableRow className="bg-slate-900/50 hover:bg-slate-900/50 border-slate-700">
-                  <TableHead className="text-slate-300">User</TableHead>
-                  <TableHead className="text-slate-300">Email</TableHead>
-                  <TableHead className="text-slate-300">Role</TableHead>
-                  <TableHead className="text-slate-300">Joined</TableHead>
-                  <TableHead className="text-slate-300 text-right">Actions</TableHead>
+                <TableRow className="bg-gray-50 hover:bg-gray-50 border-gray-200">
+                  <TableHead className="text-gray-700 font-semibold">User</TableHead>
+                  <TableHead className="text-gray-700 font-semibold">Email</TableHead>
+                  <TableHead className="text-gray-700 font-semibold">Role</TableHead>
+                  <TableHead className="text-gray-700 font-semibold">Joined</TableHead>
+                  <TableHead className="text-gray-700 font-semibold text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredUsers.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8 text-slate-400">
+                    <TableCell colSpan={5} className="text-center py-8 text-gray-500">
                       <UserIcon className="h-12 w-12 mx-auto mb-3 opacity-50" />
                       <p>No users found</p>
                     </TableCell>
@@ -175,22 +174,27 @@ const AdminUsers = () => {
                   filteredUsers.map((user) => {
                     const userIsAdmin = isAdmin(user);
                     return (
-                      <TableRow key={user.id} className="border-slate-700 hover:bg-slate-800/30">
-                        <TableCell className="font-medium text-white">
-                          {user.profiles?.full_name || 'Unknown'}
+                      <TableRow key={user.id} className="border-gray-200 hover:bg-gray-50">
+                        <TableCell className="font-medium text-gray-900">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+                              <UserIcon className="h-5 w-5 text-primary" />
+                            </div>
+                            {user.profiles?.full_name || 'Unknown'}
+                          </div>
                         </TableCell>
-                        <TableCell className="text-slate-300">{user.email}</TableCell>
+                        <TableCell className="text-gray-600">{user.email}</TableCell>
                         <TableCell>
                           {userIsAdmin ? (
-                            <Badge className="bg-gradient-to-r from-blue-600 to-purple-600">
+                            <Badge className="bg-gradient-to-r from-primary to-purple-600 text-white border-0">
                               <Shield className="h-3 w-3 mr-1" />
                               Admin
                             </Badge>
                           ) : (
-                            <Badge variant="secondary">User</Badge>
+                            <Badge className="bg-gray-100 text-gray-700 border-gray-200">User</Badge>
                           )}
                         </TableCell>
-                        <TableCell className="text-slate-300">
+                        <TableCell className="text-gray-600">
                           {format(new Date(user.created_at), 'MMM dd, yyyy')}
                         </TableCell>
                         <TableCell className="text-right">
@@ -198,10 +202,10 @@ const AdminUsers = () => {
                             variant="outline"
                             size="sm"
                             onClick={() => handleToggleAdmin(user.id, userIsAdmin)}
-                            className={`border-slate-700 ${
+                            className={`border-gray-300 ${
                               userIsAdmin
-                                ? 'text-red-400 hover:text-red-300'
-                                : 'text-green-400 hover:text-green-300'
+                                ? 'text-red-600 hover:text-red-700 hover:bg-red-50 hover:border-red-300'
+                                : 'text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 hover:border-emerald-300'
                             }`}
                           >
                             {userIsAdmin ? 'Remove Admin' : 'Make Admin'}

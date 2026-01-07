@@ -74,7 +74,6 @@ const AdminBundles = () => {
 
       if (error) throw error;
 
-      // Get product counts for each bundle
       const bundlesWithCounts = await Promise.all(
         (bundlesData || []).map(async (bundle) => {
           const { count } = await supabase
@@ -138,7 +137,6 @@ const AdminBundles = () => {
         if (error) throw error;
         bundleId = editingBundle.id;
 
-        // Delete existing bundle products
         await supabase
           .from('bundle_products')
           .delete()
@@ -157,7 +155,6 @@ const AdminBundles = () => {
         toast.success('Bundle created successfully');
       }
 
-      // Insert new bundle products
       if (selectedProducts.length > 0) {
         const bundleProductsData = selectedProducts.map(sp => ({
           bundle_id: bundleId,
@@ -185,7 +182,6 @@ const AdminBundles = () => {
     if (!confirm('Are you sure you want to delete this bundle?')) return;
 
     try {
-      // Delete bundle products first
       await supabase
         .from('bundle_products')
         .delete()
@@ -263,10 +259,10 @@ const AdminBundles = () => {
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="h-8 bg-slate-700 rounded w-48 animate-pulse"></div>
+        <div className="h-8 bg-gray-200 rounded w-48 animate-pulse"></div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[1, 2, 3].map(i => (
-            <div key={i} className="h-64 bg-slate-700 rounded animate-pulse"></div>
+            <div key={i} className="h-64 bg-gray-100 rounded animate-pulse"></div>
           ))}
         </div>
       </div>
@@ -277,23 +273,23 @@ const AdminBundles = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2">Bundles Management</h1>
-          <p className="text-slate-400">{bundles.length} total bundles</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Bundles Management</h1>
+          <p className="text-gray-600">{bundles.length} total bundles</p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={(open) => {
           setDialogOpen(open);
           if (!open) resetForm();
         }}>
           <DialogTrigger asChild>
-            <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+            <Button className="bg-primary hover:bg-primary/90">
               <Plus className="h-4 w-4 mr-2" />
               Add Bundle
             </Button>
           </DialogTrigger>
-          <DialogContent className="bg-slate-900 border-slate-700 text-white max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="bg-white border-gray-200 text-gray-900 max-w-4xl max-h-[90vh] overflow-y-auto shadow-xl">
             <DialogHeader>
-              <DialogTitle>{editingBundle ? 'Edit Bundle' : 'Create New Bundle'}</DialogTitle>
-              <DialogDescription className="text-slate-400">
+              <DialogTitle className="text-gray-900">{editingBundle ? 'Edit Bundle' : 'Create New Bundle'}</DialogTitle>
+              <DialogDescription className="text-gray-600">
                 {editingBundle ? 'Update bundle details and products' : 'Add a new bundle to your store'}
               </DialogDescription>
             </DialogHeader>
@@ -302,27 +298,27 @@ const AdminBundles = () => {
                 {/* Bundle Details */}
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="name">Bundle Name</Label>
+                    <Label htmlFor="name" className="text-gray-700">Bundle Name</Label>
                     <Input
                       id="name"
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      className="bg-slate-800 border-slate-700"
+                      className="bg-white border-gray-300 text-gray-900"
                       required
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="description">Description</Label>
+                    <Label htmlFor="description" className="text-gray-700">Description</Label>
                     <Textarea
                       id="description"
                       value={formData.description}
                       onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                      className="bg-slate-800 border-slate-700"
+                      className="bg-white border-gray-300 text-gray-900"
                       rows={4}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Bundle Image</Label>
+                    <Label className="text-gray-700">Bundle Image</Label>
                     <AdminImageUpload
                       bucket="product-images"
                       folder="bundles"
@@ -331,7 +327,7 @@ const AdminBundles = () => {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="discount">Discount Percentage</Label>
+                    <Label htmlFor="discount" className="text-gray-700">Discount Percentage</Label>
                     <Input
                       id="discount"
                       type="number"
@@ -339,7 +335,7 @@ const AdminBundles = () => {
                       max="100"
                       value={formData.discount_percentage}
                       onChange={(e) => setFormData({ ...formData, discount_percentage: parseFloat(e.target.value) })}
-                      className="bg-slate-800 border-slate-700"
+                      className="bg-white border-gray-300 text-gray-900"
                       required
                     />
                   </div>
@@ -349,19 +345,19 @@ const AdminBundles = () => {
                       checked={formData.featured}
                       onCheckedChange={(checked) => setFormData({ ...formData, featured: checked })}
                     />
-                    <Label htmlFor="featured">Featured Bundle</Label>
+                    <Label htmlFor="featured" className="text-gray-700">Featured Bundle</Label>
                   </div>
                 </div>
 
                 {/* Product Selection */}
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <Label>Select Products</Label>
-                    <Badge variant="secondary">
+                    <Label className="text-gray-700">Select Products</Label>
+                    <Badge className="bg-gray-100 text-gray-700">
                       {selectedProducts.length} selected
                     </Badge>
                   </div>
-                  <ScrollArea className="h-80 border border-slate-700 rounded-lg p-4">
+                  <ScrollArea className="h-80 border border-gray-200 rounded-lg p-4 bg-gray-50">
                     <div className="space-y-2">
                       {products.map((product) => {
                         const isSelected = selectedProducts.some(p => p.product_id === product.id);
@@ -371,7 +367,7 @@ const AdminBundles = () => {
                           <div
                             key={product.id}
                             className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${
-                              isSelected ? 'bg-blue-600/20 border border-blue-600' : 'bg-slate-800 hover:bg-slate-700'
+                              isSelected ? 'bg-primary/10 border border-primary' : 'bg-white hover:bg-gray-100 border border-gray-200'
                             }`}
                           >
                             <Checkbox
@@ -384,18 +380,18 @@ const AdminBundles = () => {
                               className="w-10 h-10 rounded object-cover"
                             />
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-white truncate">{product.name}</p>
-                              <p className="text-xs text-slate-400">₹{product.price.toLocaleString()}</p>
+                              <p className="text-sm font-medium text-gray-900 truncate">{product.name}</p>
+                              <p className="text-xs text-gray-500">₹{product.price.toLocaleString()}</p>
                             </div>
                             {isSelected && (
                               <div className="flex items-center gap-2">
-                                <Label className="text-xs text-slate-400">Qty:</Label>
+                                <Label className="text-xs text-gray-500">Qty:</Label>
                                 <Input
                                   type="number"
                                   min="1"
                                   value={bundleProduct?.quantity || 1}
                                   onChange={(e) => updateProductQuantity(product.id, parseInt(e.target.value))}
-                                  className="w-16 h-8 bg-slate-700 border-slate-600 text-sm"
+                                  className="w-16 h-8 bg-white border-gray-300 text-sm"
                                 />
                               </div>
                             )}
@@ -406,20 +402,20 @@ const AdminBundles = () => {
                   </ScrollArea>
                   
                   {selectedProducts.length > 0 && (
-                    <div className="p-4 bg-slate-800 rounded-lg">
+                    <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
                       <div className="flex justify-between text-sm mb-2">
-                        <span className="text-slate-400">Original Total:</span>
-                        <span className="text-white">₹{calculateBundleTotal().toLocaleString()}</span>
+                        <span className="text-gray-600">Original Total:</span>
+                        <span className="text-gray-900">₹{calculateBundleTotal().toLocaleString()}</span>
                       </div>
                       <div className="flex justify-between text-sm mb-2">
-                        <span className="text-slate-400">Discount ({formData.discount_percentage}%):</span>
-                        <span className="text-green-400">
+                        <span className="text-gray-600">Discount ({formData.discount_percentage}%):</span>
+                        <span className="text-emerald-600 font-medium">
                           -₹{(calculateBundleTotal() * formData.discount_percentage / 100).toLocaleString()}
                         </span>
                       </div>
-                      <div className="flex justify-between font-bold pt-2 border-t border-slate-700">
-                        <span className="text-white">Bundle Price:</span>
-                        <span className="text-white">
+                      <div className="flex justify-between font-bold pt-2 border-t border-gray-200">
+                        <span className="text-gray-900">Bundle Price:</span>
+                        <span className="text-primary">
                           ₹{(calculateBundleTotal() * (1 - formData.discount_percentage / 100)).toLocaleString()}
                         </span>
                       </div>
@@ -429,10 +425,10 @@ const AdminBundles = () => {
               </div>
 
               <div className="flex justify-end gap-2">
-                <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+                <Button type="button" variant="outline" onClick={() => setDialogOpen(false)} className="border-gray-300">
                   Cancel
                 </Button>
-                <Button type="submit" className="bg-gradient-to-r from-blue-600 to-purple-600">
+                <Button type="submit" className="bg-primary hover:bg-primary/90">
                   {editingBundle ? 'Update' : 'Create'}
                 </Button>
               </div>
@@ -441,14 +437,14 @@ const AdminBundles = () => {
         </Dialog>
       </div>
 
-      <Card className="bg-slate-800/50 border-slate-700">
+      <Card className="bg-white/80 backdrop-blur-sm border-gray-200 shadow-sm">
         <CardContent className="p-6">
           <div className="mb-6">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
                 placeholder="Search bundles..."
-                className="pl-10 bg-slate-900 border-slate-700 text-white"
+                className="pl-10 bg-white border-gray-300 text-gray-900 focus:border-primary focus:ring-primary"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -457,45 +453,45 @@ const AdminBundles = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredBundles.length === 0 ? (
-              <div className="col-span-full text-center py-12 text-slate-400">
+              <div className="col-span-full text-center py-12 text-gray-500">
                 <Package className="h-12 w-12 mx-auto mb-3 opacity-50" />
                 <p>No bundles found</p>
               </div>
             ) : (
               filteredBundles.map((bundle) => (
-                <Card key={bundle.id} className="bg-slate-900/50 border-slate-700 overflow-hidden">
-                  <div className="aspect-video bg-slate-800 relative">
+                <Card key={bundle.id} className="bg-white border-gray-200 overflow-hidden group hover:border-primary hover:shadow-lg transition-all">
+                  <div className="aspect-video bg-gray-100 relative">
                     {bundle.image_url ? (
-                      <img src={bundle.image_url} alt={bundle.name} className="w-full h-full object-cover" />
+                      <img src={bundle.image_url} alt={bundle.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
-                        <Package className="h-12 w-12 text-slate-600" />
+                        <Package className="h-12 w-12 text-gray-300" />
                       </div>
                     )}
                     {bundle.featured && (
-                      <Badge className="absolute top-2 right-2 bg-gradient-to-r from-blue-600 to-purple-600">
+                      <Badge className="absolute top-2 right-2 bg-primary text-white">
                         Featured
                       </Badge>
                     )}
-                    {bundle.discount_percentage > 0 && (
-                      <Badge className="absolute top-2 left-2 bg-green-600">
-                        {bundle.discount_percentage}% OFF
-                      </Badge>
-                    )}
+                    <Badge className="absolute top-2 left-2 bg-emerald-600 text-white">
+                      {bundle.discount_percentage}% OFF
+                    </Badge>
                   </div>
                   <CardContent className="p-4">
-                    <h3 className="text-lg font-semibold text-white mb-1">{bundle.name}</h3>
-                    <p className="text-sm text-slate-400 mb-2">
-                      {bundle.product_count} products included
-                    </p>
-                    <p className="text-sm text-slate-400 mb-4 line-clamp-2">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-1 truncate">{bundle.name}</h3>
+                    <p className="text-sm text-gray-600 mb-3 line-clamp-2">
                       {bundle.description || 'No description'}
                     </p>
+                    <div className="flex items-center justify-between mb-4">
+                      <Badge className="bg-gray-100 text-gray-700">
+                        {bundle.product_count || 0} products
+                      </Badge>
+                    </div>
                     <div className="flex gap-2">
                       <Button
                         size="sm"
                         variant="outline"
-                        className="flex-1 border-slate-700"
+                        className="flex-1 border-gray-300 hover:bg-gray-100"
                         onClick={() => openEditDialog(bundle)}
                       >
                         <Edit className="h-4 w-4 mr-1" />
@@ -504,7 +500,7 @@ const AdminBundles = () => {
                       <Button
                         size="sm"
                         variant="outline"
-                        className="border-red-700 text-red-400 hover:bg-red-900/20"
+                        className="border-red-300 text-red-600 hover:bg-red-50"
                         onClick={() => handleDelete(bundle.id)}
                       >
                         <Trash2 className="h-4 w-4" />

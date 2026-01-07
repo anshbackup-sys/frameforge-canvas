@@ -201,10 +201,10 @@ const AdminCollections = () => {
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="h-8 bg-slate-700 rounded w-48 animate-pulse"></div>
+        <div className="h-8 bg-gray-200 rounded w-48 animate-pulse"></div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[1, 2, 3].map(i => (
-            <div key={i} className="h-64 bg-slate-700 rounded animate-pulse"></div>
+            <div key={i} className="h-64 bg-gray-100 rounded animate-pulse"></div>
           ))}
         </div>
       </div>
@@ -215,58 +215,58 @@ const AdminCollections = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2">Collections Management</h1>
-          <p className="text-slate-400">{collections.length} total collections</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Collections Management</h1>
+          <p className="text-gray-600">{collections.length} total collections</p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={(open) => {
           setDialogOpen(open);
           if (!open) resetForm();
         }}>
           <DialogTrigger asChild>
-            <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+            <Button className="bg-primary hover:bg-primary/90">
               <Plus className="h-4 w-4 mr-2" />
               Add Collection
             </Button>
           </DialogTrigger>
-          <DialogContent className="bg-slate-900 border-slate-700 text-white max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="bg-white border-gray-200 text-gray-900 max-w-4xl max-h-[90vh] overflow-y-auto shadow-xl">
             <DialogHeader>
-              <DialogTitle>{editingCollection ? 'Edit Collection' : 'Create New Collection'}</DialogTitle>
-              <DialogDescription className="text-slate-400">
+              <DialogTitle className="text-gray-900">{editingCollection ? 'Edit Collection' : 'Create New Collection'}</DialogTitle>
+              <DialogDescription className="text-gray-600">
                 {editingCollection ? 'Update collection details and tag products' : 'Add a new collection and tag products to it'}
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <Tabs defaultValue="details" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 bg-slate-800">
-                  <TabsTrigger value="details">Collection Details</TabsTrigger>
-                  <TabsTrigger value="products">
+                <TabsList className="grid w-full grid-cols-2 bg-gray-100">
+                  <TabsTrigger value="details" className="data-[state=active]:bg-white">Collection Details</TabsTrigger>
+                  <TabsTrigger value="products" className="data-[state=active]:bg-white">
                     <Tag className="h-4 w-4 mr-2" />
                     Tag Products ({selectedProductIds.length})
                   </TabsTrigger>
                 </TabsList>
                 <TabsContent value="details" className="space-y-4 mt-4">
                   <div className="space-y-2">
-                    <Label htmlFor="name">Collection Name *</Label>
+                    <Label htmlFor="name" className="text-gray-700">Collection Name *</Label>
                     <Input
                       id="name"
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      className="bg-slate-800 border-slate-700"
+                      className="bg-white border-gray-300 text-gray-900"
                       required
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="description">Description</Label>
+                    <Label htmlFor="description" className="text-gray-700">Description</Label>
                     <Textarea
                       id="description"
                       value={formData.description}
                       onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                      className="bg-slate-800 border-slate-700"
+                      className="bg-white border-gray-300 text-gray-900"
                       rows={4}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Collection Image</Label>
+                    <Label className="text-gray-700">Collection Image</Label>
                     <AdminImageUpload
                       bucket="product-images"
                       folder="collections"
@@ -280,7 +280,7 @@ const AdminCollections = () => {
                       checked={formData.featured}
                       onCheckedChange={(checked) => setFormData({ ...formData, featured: checked })}
                     />
-                    <Label htmlFor="featured">Featured Collection</Label>
+                    <Label htmlFor="featured" className="text-gray-700">Featured Collection</Label>
                   </div>
                 </TabsContent>
                 <TabsContent value="products" className="mt-4">
@@ -290,13 +290,13 @@ const AdminCollections = () => {
                   />
                 </TabsContent>
               </Tabs>
-              <div className="flex justify-end gap-2 pt-4 border-t border-slate-700">
-                <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+              <div className="flex justify-end gap-2 pt-4 border-t border-gray-200">
+                <Button type="button" variant="outline" onClick={() => setDialogOpen(false)} className="border-gray-300">
                   Cancel
                 </Button>
                 <Button
                   type="submit"
-                  className="bg-gradient-to-r from-blue-600 to-purple-600"
+                  className="bg-primary hover:bg-primary/90"
                   disabled={saving}
                 >
                   {saving ? 'Saving...' : (editingCollection ? 'Update' : 'Create')}
@@ -307,14 +307,14 @@ const AdminCollections = () => {
         </Dialog>
       </div>
 
-      <Card className="bg-slate-800/50 border-slate-700">
+      <Card className="bg-white/80 backdrop-blur-sm border-gray-200 shadow-sm">
         <CardContent className="p-6">
           <div className="mb-6">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
                 placeholder="Search collections..."
-                className="pl-10 bg-slate-900 border-slate-700 text-white"
+                className="pl-10 bg-white border-gray-300 text-gray-900 focus:border-primary focus:ring-primary"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -323,43 +323,43 @@ const AdminCollections = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredCollections.length === 0 ? (
-              <div className="col-span-full text-center py-12 text-slate-400">
+              <div className="col-span-full text-center py-12 text-gray-500">
                 <ImageIcon className="h-12 w-12 mx-auto mb-3 opacity-50" />
                 <p>No collections found</p>
               </div>
             ) : (
               filteredCollections.map((collection) => (
-                <Card key={collection.id} className="bg-slate-900/50 border-slate-700 overflow-hidden group hover:border-blue-600 transition-all">
-                  <div className="aspect-video bg-slate-800 relative overflow-hidden">
+                <Card key={collection.id} className="bg-white border-gray-200 overflow-hidden group hover:border-primary hover:shadow-lg transition-all">
+                  <div className="aspect-video bg-gray-100 relative overflow-hidden">
                     {collection.image_url ? (
                       <img src={collection.image_url} alt={collection.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
-                        <ImageIcon className="h-12 w-12 text-slate-600" />
+                        <ImageIcon className="h-12 w-12 text-gray-300" />
                       </div>
                     )}
                     {collection.featured && (
-                      <Badge className="absolute top-2 right-2 bg-gradient-to-r from-blue-600 to-purple-600">
+                      <Badge className="absolute top-2 right-2 bg-primary text-white">
                         Featured
                       </Badge>
                     )}
                     {collection.product_count !== undefined && (
-                      <Badge className="absolute top-2 left-2 bg-slate-900/80">
+                      <Badge className="absolute top-2 left-2 bg-gray-900/80 text-white">
                         <Tag className="h-3 w-3 mr-1" />
                         {collection.product_count} Products
                       </Badge>
                     )}
                   </div>
                   <CardContent className="p-4">
-                    <h3 className="text-lg font-semibold text-white mb-2 truncate">{collection.name}</h3>
-                    <p className="text-sm text-slate-400 mb-4 line-clamp-2 h-10">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2 truncate">{collection.name}</h3>
+                    <p className="text-sm text-gray-600 mb-4 line-clamp-2 h-10">
                       {collection.description || 'No description'}
                     </p>
                     <div className="flex gap-2">
                       <Button
                         size="sm"
                         variant="outline"
-                        className="flex-1 border-slate-700 hover:bg-slate-800"
+                        className="flex-1 border-gray-300 hover:bg-gray-100"
                         onClick={() => openEditDialog(collection)}
                       >
                         <Edit className="h-4 w-4 mr-1" />
@@ -368,7 +368,7 @@ const AdminCollections = () => {
                       <Button
                         size="sm"
                         variant="outline"
-                        className="border-red-700 text-red-400 hover:bg-red-900/20"
+                        className="border-red-300 text-red-600 hover:bg-red-50"
                         onClick={() => handleDelete(collection.id)}
                       >
                         <Trash2 className="h-4 w-4" />

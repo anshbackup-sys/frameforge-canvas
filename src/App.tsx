@@ -24,6 +24,18 @@ import Collections from "./pages/Collections";
 import CollectionDetail from "./pages/CollectionDetail";
 import SearchResults from "./pages/SearchResults";
 import SavedDesigns from "./pages/SavedDesigns";
+import SizeGuide from "./pages/SizeGuide";
+import ShippingInfo from "./pages/ShippingInfo";
+import Returns from "./pages/Returns";
+import CareInstructions from "./pages/CareInstructions";
+import Contact from "./pages/Contact";
+import FAQ from "./pages/FAQ";
+import OurStory from "./pages/OurStory";
+import Craftsmanship from "./pages/Craftsmanship";
+import Press from "./pages/Press";
+import Careers from "./pages/Careers";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsOfService from "./pages/TermsOfService";
 import NotFound from "./pages/NotFound";
 import AdminLogin from "./pages/admin/AdminLogin";
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -69,6 +81,22 @@ const App = () => (
                   <Route path="/collection/:id" element={<CollectionDetail />} />
                   <Route path="/search" element={<SearchResults />} />
                   <Route path="/saved-designs" element={<SavedDesigns />} />
+                  
+                  {/* Footer Pages - Help & Support */}
+                  <Route path="/size-guide" element={<SizeGuide />} />
+                  <Route path="/shipping-info" element={<ShippingInfo />} />
+                  <Route path="/returns" element={<Returns />} />
+                  <Route path="/care-instructions" element={<CareInstructions />} />
+                  <Route path="/contact" element={<Contact />} />
+                  <Route path="/faq" element={<FAQ />} />
+                  
+                  {/* Footer Pages - Company */}
+                  <Route path="/our-story" element={<OurStory />} />
+                  <Route path="/craftsmanship" element={<Craftsmanship />} />
+                  <Route path="/press" element={<Press />} />
+                  <Route path="/careers" element={<Careers />} />
+                  <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                  <Route path="/terms-of-service" element={<TermsOfService />} />
 
                   <Route path="/admin/login" element={<AdminLogin />} />
                   <Route

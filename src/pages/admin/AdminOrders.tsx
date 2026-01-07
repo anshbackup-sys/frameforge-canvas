@@ -30,7 +30,6 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 
 interface Order {
@@ -70,16 +69,16 @@ interface OrderDetail extends Order {
 }
 
 const ORDER_STATUSES = [
-  { value: 'pending', label: 'Pending', color: 'bg-yellow-600' },
-  { value: 'confirmed', label: 'Confirmed', color: 'bg-blue-500' },
-  { value: 'processing', label: 'Processing', color: 'bg-blue-600' },
-  { value: 'packed', label: 'Packed', color: 'bg-indigo-600' },
-  { value: 'shipped', label: 'Shipped', color: 'bg-purple-600' },
-  { value: 'out_for_delivery', label: 'Out for Delivery', color: 'bg-violet-600' },
-  { value: 'delivered', label: 'Delivered', color: 'bg-green-600' },
-  { value: 'cancelled', label: 'Cancelled', color: 'bg-red-600' },
-  { value: 'refund_requested', label: 'Refund Requested', color: 'bg-orange-600' },
-  { value: 'refunded', label: 'Refunded', color: 'bg-gray-600' },
+  { value: 'pending', label: 'Pending', color: 'bg-amber-100 text-amber-800 border-amber-200' },
+  { value: 'confirmed', label: 'Confirmed', color: 'bg-blue-100 text-blue-800 border-blue-200' },
+  { value: 'processing', label: 'Processing', color: 'bg-sky-100 text-sky-800 border-sky-200' },
+  { value: 'packed', label: 'Packed', color: 'bg-indigo-100 text-indigo-800 border-indigo-200' },
+  { value: 'shipped', label: 'Shipped', color: 'bg-purple-100 text-purple-800 border-purple-200' },
+  { value: 'out_for_delivery', label: 'Out for Delivery', color: 'bg-violet-100 text-violet-800 border-violet-200' },
+  { value: 'delivered', label: 'Delivered', color: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
+  { value: 'cancelled', label: 'Cancelled', color: 'bg-red-100 text-red-800 border-red-200' },
+  { value: 'refund_requested', label: 'Refund Requested', color: 'bg-orange-100 text-orange-800 border-orange-200' },
+  { value: 'refunded', label: 'Refunded', color: 'bg-gray-100 text-gray-800 border-gray-200' },
 ];
 
 const AdminOrders = () => {
@@ -92,7 +91,6 @@ const AdminOrders = () => {
   const [trackingDialogOpen, setTrackingDialogOpen] = useState(false);
   const [trackingNumber, setTrackingNumber] = useState('');
   const [statusNotes, setStatusNotes] = useState('');
-  const navigate = useNavigate();
 
   useEffect(() => {
     fetchOrders();
@@ -244,7 +242,7 @@ const AdminOrders = () => {
 
   const getStatusColor = (status: string) => {
     const statusObj = ORDER_STATUSES.find(s => s.value === status);
-    return statusObj?.color || 'bg-slate-600';
+    return statusObj?.color || 'bg-gray-100 text-gray-800';
   };
 
   const getStatusLabel = (status: string) => {
@@ -265,12 +263,12 @@ const AdminOrders = () => {
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="h-8 bg-slate-700 rounded w-48 animate-pulse"></div>
-        <Card className="bg-slate-800/50 border-slate-700">
+        <div className="h-8 bg-gray-200 rounded w-48 animate-pulse"></div>
+        <Card className="bg-white/80 backdrop-blur-sm border-gray-200 shadow-sm">
           <CardContent className="p-6">
             <div className="space-y-4">
               {[1, 2, 3, 4, 5].map(i => (
-                <div key={i} className="h-16 bg-slate-700 rounded animate-pulse"></div>
+                <div key={i} className="h-16 bg-gray-100 rounded animate-pulse"></div>
               ))}
             </div>
           </CardContent>
@@ -282,30 +280,30 @@ const AdminOrders = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-white mb-2">Orders Management</h1>
-        <p className="text-slate-400">{orders.length} total orders</p>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Orders Management</h1>
+        <p className="text-gray-600">{orders.length} total orders</p>
       </div>
 
-      <Card className="bg-slate-800/50 border-slate-700">
+      <Card className="bg-white/80 backdrop-blur-sm border-gray-200 shadow-sm">
         <CardContent className="p-6">
           <div className="mb-6 flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
                 placeholder="Search by order number or customer name..."
-                className="pl-10 bg-slate-900 border-slate-700 text-white"
+                className="pl-10 bg-white border-gray-300 text-gray-900 focus:border-primary focus:ring-primary"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full sm:w-48 bg-slate-900 border-slate-700 text-white">
+              <SelectTrigger className="w-full sm:w-48 bg-white border-gray-300 text-gray-900">
                 <SelectValue placeholder="Filter by status" />
               </SelectTrigger>
-              <SelectContent className="bg-slate-900 border-slate-700">
-                <SelectItem value="all">All Status</SelectItem>
+              <SelectContent className="bg-white border-gray-200 shadow-lg">
+                <SelectItem value="all" className="text-gray-900 hover:bg-gray-100">All Status</SelectItem>
                 {ORDER_STATUSES.map(status => (
-                  <SelectItem key={status.value} value={status.value}>
+                  <SelectItem key={status.value} value={status.value} className="text-gray-900 hover:bg-gray-100">
                     {status.label}
                   </SelectItem>
                 ))}
@@ -313,56 +311,56 @@ const AdminOrders = () => {
             </Select>
           </div>
 
-          <div className="rounded-lg border border-slate-700 overflow-x-auto">
+          <div className="rounded-lg border border-gray-200 overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow className="bg-slate-900/50 hover:bg-slate-900/50 border-slate-700">
-                  <TableHead className="text-slate-300">Order Number</TableHead>
-                  <TableHead className="text-slate-300">Customer</TableHead>
-                  <TableHead className="text-slate-300">Date</TableHead>
-                  <TableHead className="text-slate-300">Items</TableHead>
-                  <TableHead className="text-slate-300">Total</TableHead>
-                  <TableHead className="text-slate-300">Payment</TableHead>
-                  <TableHead className="text-slate-300">Status</TableHead>
-                  <TableHead className="text-slate-300 text-right">Actions</TableHead>
+                <TableRow className="bg-gray-50 hover:bg-gray-50 border-gray-200">
+                  <TableHead className="text-gray-700 font-semibold">Order Number</TableHead>
+                  <TableHead className="text-gray-700 font-semibold">Customer</TableHead>
+                  <TableHead className="text-gray-700 font-semibold">Date</TableHead>
+                  <TableHead className="text-gray-700 font-semibold">Items</TableHead>
+                  <TableHead className="text-gray-700 font-semibold">Total</TableHead>
+                  <TableHead className="text-gray-700 font-semibold">Payment</TableHead>
+                  <TableHead className="text-gray-700 font-semibold">Status</TableHead>
+                  <TableHead className="text-gray-700 font-semibold text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredOrders.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-slate-400">
+                    <TableCell colSpan={8} className="text-center py-8 text-gray-500">
                       <Package className="h-12 w-12 mx-auto mb-3 opacity-50" />
                       <p>No orders found</p>
                     </TableCell>
                   </TableRow>
                 ) : (
                   filteredOrders.map((order) => (
-                    <TableRow key={order.id} className="border-slate-700 hover:bg-slate-800/30">
-                      <TableCell className="font-medium text-white">
+                    <TableRow key={order.id} className="border-gray-200 hover:bg-gray-50">
+                      <TableCell className="font-medium text-gray-900">
                         {order.order_number || 'N/A'}
                       </TableCell>
-                      <TableCell className="text-slate-300">
+                      <TableCell className="text-gray-700">
                         <div>
                           <div className="font-medium">{order.profiles?.full_name || 'Unknown'}</div>
                           {order.profiles?.phone && (
-                            <div className="text-xs text-slate-500">{order.profiles.phone}</div>
+                            <div className="text-xs text-gray-500">{order.profiles.phone}</div>
                           )}
                         </div>
                       </TableCell>
-                      <TableCell className="text-slate-300">
+                      <TableCell className="text-gray-700">
                         <div>{format(new Date(order.created_at), 'MMM dd, yyyy')}</div>
-                        <div className="text-xs text-slate-500">{format(new Date(order.created_at), 'hh:mm a')}</div>
+                        <div className="text-xs text-gray-500">{format(new Date(order.created_at), 'hh:mm a')}</div>
                       </TableCell>
-                      <TableCell className="text-slate-300">
+                      <TableCell className="text-gray-700">
                         {order.order_items_count || 0}
                       </TableCell>
-                      <TableCell className="text-slate-300">
+                      <TableCell className="text-gray-900 font-medium">
                         ₹{order.total?.toLocaleString() || '0'}
                       </TableCell>
                       <TableCell>
                         <div className="text-xs">
-                          <div className="font-medium text-white">{order.payment_method?.toUpperCase() || 'COD'}</div>
-                          <Badge className="mt-1" variant={order.payment_status === 'paid' ? 'default' : 'secondary'}>
+                          <div className="font-medium text-gray-900">{order.payment_method?.toUpperCase() || 'COD'}</div>
+                          <Badge className={`mt-1 ${order.payment_status === 'paid' ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-100 text-gray-800'}`}>
                             {order.payment_status || 'pending'}
                           </Badge>
                         </div>
@@ -372,14 +370,14 @@ const AdminOrders = () => {
                           value={order.status}
                           onValueChange={(value) => handleStatusChange(order.id, value)}
                         >
-                          <SelectTrigger className="w-40 bg-slate-900 border-slate-700">
-                            <Badge className={getStatusColor(order.status)}>
+                          <SelectTrigger className="w-44 bg-white border-gray-300">
+                            <Badge className={`${getStatusColor(order.status)} border`}>
                               {getStatusLabel(order.status)}
                             </Badge>
                           </SelectTrigger>
-                          <SelectContent className="bg-slate-900 border-slate-700">
+                          <SelectContent className="bg-white border-gray-200 shadow-lg">
                             {ORDER_STATUSES.map(status => (
-                              <SelectItem key={status.value} value={status.value}>
+                              <SelectItem key={status.value} value={status.value} className="text-gray-900 hover:bg-gray-100">
                                 {status.label}
                               </SelectItem>
                             ))}
@@ -390,7 +388,7 @@ const AdminOrders = () => {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="text-slate-400 hover:text-blue-400"
+                          className="text-gray-500 hover:text-primary hover:bg-primary/10"
                           onClick={() => fetchOrderDetails(order.id)}
                         >
                           <Eye className="h-4 w-4" />
@@ -406,10 +404,10 @@ const AdminOrders = () => {
       </Card>
 
       <Dialog open={detailDialogOpen} onOpenChange={setDetailDialogOpen}>
-        <DialogContent className="bg-slate-900 border-slate-700 text-white max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="bg-white border-gray-200 text-gray-900 max-w-4xl max-h-[90vh] overflow-y-auto shadow-xl">
           <DialogHeader>
-            <DialogTitle>Order Details - {selectedOrder?.order_number}</DialogTitle>
-            <DialogDescription className="text-slate-400">
+            <DialogTitle className="text-gray-900">Order Details - {selectedOrder?.order_number}</DialogTitle>
+            <DialogDescription className="text-gray-600">
               Order placed on {selectedOrder && format(new Date(selectedOrder.created_at), 'MMMM dd, yyyy hh:mm a')}
             </DialogDescription>
           </DialogHeader>
@@ -417,27 +415,27 @@ const AdminOrders = () => {
           {selectedOrder && (
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Card className="bg-slate-800 border-slate-700">
+                <Card className="bg-gray-50 border-gray-200">
                   <CardContent className="p-4">
-                    <h3 className="font-semibold mb-3 flex items-center gap-2">
+                    <h3 className="font-semibold mb-3 flex items-center gap-2 text-gray-900">
                       <FileText className="h-4 w-4" />
                       Customer Information
                     </h3>
                     <div className="space-y-2 text-sm">
                       <div>
-                        <span className="text-slate-400">Name:</span>
-                        <span className="ml-2 text-white">{selectedOrder.profiles?.full_name || 'Unknown'}</span>
+                        <span className="text-gray-500">Name:</span>
+                        <span className="ml-2 text-gray-900 font-medium">{selectedOrder.profiles?.full_name || 'Unknown'}</span>
                       </div>
                       {selectedOrder.profiles?.phone && (
                         <div>
-                          <span className="text-slate-400">Phone:</span>
-                          <span className="ml-2 text-white">{selectedOrder.profiles.phone}</span>
+                          <span className="text-gray-500">Phone:</span>
+                          <span className="ml-2 text-gray-900">{selectedOrder.profiles.phone}</span>
                         </div>
                       )}
                       {selectedOrder.shipping_address && (
                         <div>
-                          <span className="text-slate-400">Address:</span>
-                          <div className="ml-2 text-white">
+                          <span className="text-gray-500">Address:</span>
+                          <div className="ml-2 text-gray-900">
                             {typeof selectedOrder.shipping_address === 'string'
                               ? selectedOrder.shipping_address
                               : JSON.stringify(selectedOrder.shipping_address)}
@@ -448,31 +446,31 @@ const AdminOrders = () => {
                   </CardContent>
                 </Card>
 
-                <Card className="bg-slate-800 border-slate-700">
+                <Card className="bg-gray-50 border-gray-200">
                   <CardContent className="p-4">
-                    <h3 className="font-semibold mb-3 flex items-center gap-2">
+                    <h3 className="font-semibold mb-3 flex items-center gap-2 text-gray-900">
                       <Truck className="h-4 w-4" />
                       Shipping & Payment
                     </h3>
                     <div className="space-y-2 text-sm">
                       <div>
-                        <span className="text-slate-400">Payment Method:</span>
-                        <span className="ml-2 text-white">{selectedOrder.payment_method?.toUpperCase() || 'COD'}</span>
+                        <span className="text-gray-500">Payment Method:</span>
+                        <span className="ml-2 text-gray-900 font-medium">{selectedOrder.payment_method?.toUpperCase() || 'COD'}</span>
                       </div>
                       <div>
-                        <span className="text-slate-400">Payment Status:</span>
-                        <Badge className="ml-2" variant={selectedOrder.payment_status === 'paid' ? 'default' : 'secondary'}>
+                        <span className="text-gray-500">Payment Status:</span>
+                        <Badge className={`ml-2 ${selectedOrder.payment_status === 'paid' ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-100 text-gray-800'}`}>
                           {selectedOrder.payment_status || 'pending'}
                         </Badge>
                       </div>
-                      <div>
-                        <span className="text-slate-400">Tracking Number:</span>
-                        <span className="ml-2 text-white">{selectedOrder.tracking_number || 'Not assigned'}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-gray-500">Tracking:</span>
+                        <span className="text-gray-900">{selectedOrder.tracking_number || 'Not added'}</span>
                         <Button
-                          variant="ghost"
+                          variant="outline"
                           size="sm"
-                          className="ml-2 h-6 text-xs"
                           onClick={() => setTrackingDialogOpen(true)}
+                          className="ml-auto text-xs border-gray-300 hover:bg-gray-100"
                         >
                           Update
                         </Button>
@@ -482,87 +480,85 @@ const AdminOrders = () => {
                 </Card>
               </div>
 
-              <Card className="bg-slate-800 border-slate-700">
+              {/* Order Items */}
+              <Card className="bg-gray-50 border-gray-200">
                 <CardContent className="p-4">
-                  <h3 className="font-semibold mb-3">Order Items</h3>
+                  <h3 className="font-semibold mb-3 text-gray-900">Order Items</h3>
                   <div className="space-y-3">
-                    {selectedOrder.order_items?.map((item: any) => (
-                      <div key={item.id} className="flex items-center gap-4 p-3 bg-slate-900 rounded">
+                    {selectedOrder.order_items?.map((item) => (
+                      <div key={item.id} className="flex items-center gap-3 p-3 bg-white rounded-lg border border-gray-200">
                         <img
-                          src={item.products.image_url || '/placeholder.svg'}
-                          alt={item.products.name}
-                          className="w-16 h-16 object-cover rounded"
+                          src={item.products?.image_url || '/placeholder.svg'}
+                          alt={item.products?.name}
+                          className="w-12 h-12 rounded object-cover"
                         />
                         <div className="flex-1">
-                          <div className="font-medium">{item.products.name}</div>
-                          <div className="text-sm text-slate-400">
-                            Quantity: {item.quantity} × ₹{item.price?.toLocaleString()}
-                          </div>
+                          <p className="font-medium text-gray-900">{item.products?.name}</p>
+                          <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
                         </div>
-                        <div className="text-right font-semibold">
-                          ₹{(item.quantity * item.price)?.toLocaleString()}
-                        </div>
+                        <p className="font-medium text-gray-900">₹{item.price?.toLocaleString()}</p>
                       </div>
                     ))}
-                    <div className="flex justify-between items-center pt-3 border-t border-slate-700 font-bold text-lg">
-                      <span>Total:</span>
-                      <span>₹{selectedOrder.total?.toLocaleString()}</span>
-                    </div>
+                  </div>
+                  <div className="mt-4 pt-4 border-t border-gray-200 flex justify-between">
+                    <span className="font-semibold text-gray-900">Total</span>
+                    <span className="font-bold text-lg text-gray-900">₹{selectedOrder.total?.toLocaleString()}</span>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="bg-slate-800 border-slate-700">
-                <CardContent className="p-4">
-                  <h3 className="font-semibold mb-3">Status History</h3>
-                  <div className="space-y-3">
-                    {selectedOrder.order_status_history?.map((history: any) => (
-                      <div key={history.id} className="flex gap-3 p-3 bg-slate-900 rounded">
-                        <Badge className={getStatusColor(history.status)}>
-                          {getStatusLabel(history.status)}
-                        </Badge>
-                        <div className="flex-1">
-                          <div className="text-sm text-slate-400">
-                            {format(new Date(history.created_at), 'MMM dd, yyyy hh:mm a')}
+              {/* Status History */}
+              {selectedOrder.order_status_history?.length > 0 && (
+                <Card className="bg-gray-50 border-gray-200">
+                  <CardContent className="p-4">
+                    <h3 className="font-semibold mb-3 text-gray-900">Status History</h3>
+                    <div className="space-y-2">
+                      {selectedOrder.order_status_history
+                        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+                        .map((history) => (
+                          <div key={history.id} className="flex items-center gap-3 text-sm">
+                            <Badge className={getStatusColor(history.status)}>
+                              {getStatusLabel(history.status)}
+                            </Badge>
+                            <span className="text-gray-500">
+                              {format(new Date(history.created_at), 'MMM dd, yyyy hh:mm a')}
+                            </span>
+                            {history.notes && (
+                              <span className="text-gray-600">- {history.notes}</span>
+                            )}
                           </div>
-                          {history.notes && (
-                            <div className="text-sm mt-1">{history.notes}</div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
+                        ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           )}
         </DialogContent>
       </Dialog>
 
+      {/* Tracking Number Dialog */}
       <Dialog open={trackingDialogOpen} onOpenChange={setTrackingDialogOpen}>
-        <DialogContent className="bg-slate-900 border-slate-700 text-white">
+        <DialogContent className="bg-white border-gray-200 shadow-xl">
           <DialogHeader>
-            <DialogTitle>Update Tracking Number</DialogTitle>
-            <DialogDescription className="text-slate-400">
-              Enter the tracking number for this order
-            </DialogDescription>
+            <DialogTitle className="text-gray-900">Update Tracking Number</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div>
-              <Label htmlFor="tracking">Tracking Number</Label>
+            <div className="space-y-2">
+              <Label htmlFor="tracking" className="text-gray-700">Tracking Number</Label>
               <Input
                 id="tracking"
                 value={trackingNumber}
                 onChange={(e) => setTrackingNumber(e.target.value)}
-                className="bg-slate-800 border-slate-700"
+                className="bg-white border-gray-300 text-gray-900"
                 placeholder="Enter tracking number"
               />
             </div>
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setTrackingDialogOpen(false)}>
+              <Button variant="outline" onClick={() => setTrackingDialogOpen(false)} className="border-gray-300">
                 Cancel
               </Button>
-              <Button onClick={handleTrackingUpdate}>
+              <Button onClick={handleTrackingUpdate} className="bg-primary hover:bg-primary/90">
                 Update
               </Button>
             </div>
