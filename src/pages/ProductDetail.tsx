@@ -54,10 +54,10 @@ const ProductDetail = () => {
   const [selectedImage, setSelectedImage] = useState(0);
   const [product, setProduct] = useState<Product | null>(null);
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
-  const [reviews, setReviews] = useState<Review[]>([]);
-  const [averageRating, setAverageRating] = useState(0);
+  const [reviewRefreshKey, setReviewRefreshKey] = useState(0);
   const [canReview, setCanReview] = useState(false);
   const [hasReviewed, setHasReviewed] = useState(false);
+  const [showReviewForm, setShowReviewForm] = useState(false);
   const [loading, setLoading] = useState(true);
   const { addToCart } = useCart();
   const { isInWishlist, toggleWishlist } = useWishlist();
@@ -66,7 +66,6 @@ const ProductDetail = () => {
     if (id) {
       fetchProduct();
       fetchRelatedProducts();
-      fetchReviews();
     }
   }, [id]);
 
@@ -114,28 +113,7 @@ const ProductDetail = () => {
       console.error('Error fetching related products:', error);
     }
   };
-
-  const fetchReviews = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('reviews')
-        .select('id, rating, title, comment, created_at, verified_purchase, user_id')
-        .eq('product_id', id)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      
-      setReviews(data || []);
-      
-      // Calculate average rating
-      if (data && data.length > 0) {
-        const avg = data.reduce((sum, r) => sum + r.rating, 0) / data.length;
-        setAverageRating(Math.round(avg * 10) / 10);
-      }
-    } catch (error) {
-      console.error('Error fetching reviews:', error);
-    }
-  };
+  // Reviews are fetched by ReviewList component directly
 
   const checkCanReview = async () => {
     if (!user || !id) return;
@@ -184,10 +162,7 @@ const ProductDetail = () => {
     }
   };
 
-  const handleReviewSubmitted = () => {
-    fetchReviews();
-    setHasReviewed(true);
-  };
+  // handleReviewSubmitted is now handled inline with onSuccess callback
 
   if (loading) {
     return (
@@ -293,12 +268,12 @@ const ProductDetail = () => {
                     <Star
                       key={i}
                       className={`h-4 w-4 ${
-                        i < Math.floor(averageRating || product.rating || 0) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
+                        i < Math.floor(product.rating || 0) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
                       }`}
                     />
                   ))}
                   <span className="ml-1 text-sm text-muted-foreground">
-                    {averageRating || product.rating || 0} ({reviews.length || product.reviews_count} reviews)
+                    {product.rating || 0} ({product.reviews_count} reviews)
                   </span>
                 </div>
               </div>
@@ -399,7 +374,7 @@ const ProductDetail = () => {
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="details">Details</TabsTrigger>
               <TabsTrigger value="specs">Specifications</TabsTrigger>
-              <TabsTrigger value="reviews">Reviews ({reviews.length})</TabsTrigger>
+              <TabsTrigger value="reviews">Reviews</TabsTrigger>
             </TabsList>
             
             <TabsContent value="details" className="mt-6">
@@ -429,10 +404,21 @@ const ProductDetail = () => {
             
             <TabsContent value="reviews" className="mt-6 space-y-8">
               {/* Review Form */}
-              {user && canReview && !hasReviewed && (
+              {user && canReview && !hasReviewed && !showReviewForm && (
+                <Button onClick={() => setShowReviewForm(true)}>
+                  Write a Review
+                </Button>
+              )}
+              
+              {user && canReview && !hasReviewed && showReviewForm && (
                 <ReviewForm 
                   productId={product.id} 
-                  onReviewSubmitted={handleReviewSubmitted} 
+                  onSuccess={() => {
+                    setShowReviewForm(false);
+                    setHasReviewed(true);
+                    setReviewRefreshKey(k => k + 1);
+                  }}
+                  onCancel={() => setShowReviewForm(false)}
                 />
               )}
               
@@ -461,7 +447,7 @@ const ProductDetail = () => {
               )}
               
               {/* Review List */}
-              <ReviewList reviews={reviews} averageRating={averageRating} />
+              <ReviewList productId={product.id} refreshKey={reviewRefreshKey} />
             </TabsContent>
           </Tabs>
         </div>
