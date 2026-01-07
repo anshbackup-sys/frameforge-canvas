@@ -9,10 +9,13 @@ import { Separator } from "@/components/ui/separator";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ProductCard from "@/components/ProductCard";
+import ReviewForm from "@/components/ReviewForm";
+import ReviewList from "@/components/ReviewList";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useCart } from "@/contexts/CartContext";
 import { useWishlist } from "@/contexts/WishlistContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Product {
   id: string;
@@ -31,12 +34,30 @@ interface Product {
   featured: boolean;
 }
 
+interface Review {
+  id: string;
+  rating: number;
+  title: string | null;
+  comment: string | null;
+  created_at: string;
+  verified_purchase: boolean | null;
+  user_id: string;
+  profiles?: {
+    full_name: string | null;
+  };
+}
+
 const ProductDetail = () => {
   const { id } = useParams();
+  const { user } = useAuth();
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
   const [product, setProduct] = useState<Product | null>(null);
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [averageRating, setAverageRating] = useState(0);
+  const [canReview, setCanReview] = useState(false);
+  const [hasReviewed, setHasReviewed] = useState(false);
   const [loading, setLoading] = useState(true);
   const { addToCart } = useCart();
   const { isInWishlist, toggleWishlist } = useWishlist();
@@ -45,8 +66,15 @@ const ProductDetail = () => {
     if (id) {
       fetchProduct();
       fetchRelatedProducts();
+      fetchReviews();
     }
   }, [id]);
+
+  useEffect(() => {
+    if (id && user) {
+      checkCanReview();
+    }
+  }, [id, user]);
 
   const fetchProduct = async () => {
     try {
@@ -87,6 +115,63 @@ const ProductDetail = () => {
     }
   };
 
+  const fetchReviews = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('reviews')
+        .select('id, rating, title, comment, created_at, verified_purchase, user_id')
+        .eq('product_id', id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      
+      setReviews(data || []);
+      
+      // Calculate average rating
+      if (data && data.length > 0) {
+        const avg = data.reduce((sum, r) => sum + r.rating, 0) / data.length;
+        setAverageRating(Math.round(avg * 10) / 10);
+      }
+    } catch (error) {
+      console.error('Error fetching reviews:', error);
+    }
+  };
+
+  const checkCanReview = async () => {
+    if (!user || !id) return;
+    
+    try {
+      // Check if user has purchased this product
+      const { data: orderItems, error: orderError } = await supabase
+        .from('order_items')
+        .select(`
+          id,
+          order:order_id (user_id, status)
+        `)
+        .eq('product_id', id);
+
+      if (orderError) throw orderError;
+
+      const hasPurchased = orderItems?.some(
+        item => item.order && (item.order as any).user_id === user.id && (item.order as any).status === 'delivered'
+      );
+      
+      setCanReview(hasPurchased || false);
+      
+      // Check if user has already reviewed
+      const { data: existingReview } = await supabase
+        .from('reviews')
+        .select('id')
+        .eq('product_id', id)
+        .eq('user_id', user.id)
+        .single();
+      
+      setHasReviewed(!!existingReview);
+    } catch (error) {
+      console.error('Error checking review eligibility:', error);
+    }
+  };
+
   const handleAddToCart = () => {
     if (product) {
       addToCart(product.id, quantity);
@@ -99,17 +184,22 @@ const ProductDetail = () => {
     }
   };
 
+  const handleReviewSubmitted = () => {
+    fetchReviews();
+    setHasReviewed(true);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen">
         <Header />
         <div className="container-wide py-8">
           <div className="grid lg:grid-cols-2 gap-12">
-            <div className="aspect-square bg-cosmic-gray/50 rounded-xl animate-pulse" />
+            <div className="aspect-square bg-muted rounded-xl animate-pulse" />
             <div className="space-y-6">
-              <div className="h-8 bg-cosmic-gray/50 rounded animate-pulse" />
-              <div className="h-24 bg-cosmic-gray/50 rounded animate-pulse" />
-              <div className="h-12 bg-cosmic-gray/50 rounded animate-pulse" />
+              <div className="h-8 bg-muted rounded animate-pulse" />
+              <div className="h-24 bg-muted rounded animate-pulse" />
+              <div className="h-12 bg-muted rounded animate-pulse" />
             </div>
           </div>
         </div>
@@ -203,12 +293,12 @@ const ProductDetail = () => {
                     <Star
                       key={i}
                       className={`h-4 w-4 ${
-                        i < Math.floor(product.rating || 0) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
+                        i < Math.floor(averageRating || product.rating || 0) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
                       }`}
                     />
                   ))}
                   <span className="ml-1 text-sm text-muted-foreground">
-                    {product.rating || 0} ({product.reviews_count} reviews)
+                    {averageRating || product.rating || 0} ({reviews.length || product.reviews_count} reviews)
                   </span>
                 </div>
               </div>
@@ -309,7 +399,7 @@ const ProductDetail = () => {
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="details">Details</TabsTrigger>
               <TabsTrigger value="specs">Specifications</TabsTrigger>
-              <TabsTrigger value="reviews">Reviews ({product.reviews_count})</TabsTrigger>
+              <TabsTrigger value="reviews">Reviews ({reviews.length})</TabsTrigger>
             </TabsList>
             
             <TabsContent value="details" className="mt-6">
@@ -326,14 +416,52 @@ const ProductDetail = () => {
                   <h4 className="font-medium mb-2">Material</h4>
                   <p className="text-sm text-muted-foreground">{product.material}</p>
                 </div>
+                <div>
+                  <h4 className="font-medium mb-2">Size</h4>
+                  <p className="text-sm text-muted-foreground">{product.size}</p>
+                </div>
+                <div>
+                  <h4 className="font-medium mb-2">Finish</h4>
+                  <p className="text-sm text-muted-foreground">{product.finish}</p>
+                </div>
               </div>
             </TabsContent>
             
-            <TabsContent value="reviews" className="mt-6">
-              <div className="text-center">
-                <div className="text-4xl font-bold">{product.rating || 0}</div>
-                <p className="text-sm text-muted-foreground">{product.reviews_count} reviews</p>
-              </div>
+            <TabsContent value="reviews" className="mt-6 space-y-8">
+              {/* Review Form */}
+              {user && canReview && !hasReviewed && (
+                <ReviewForm 
+                  productId={product.id} 
+                  onReviewSubmitted={handleReviewSubmitted} 
+                />
+              )}
+              
+              {user && hasReviewed && (
+                <Card className="bg-muted/50">
+                  <CardContent className="p-4 text-center text-muted-foreground">
+                    You have already reviewed this product.
+                  </CardContent>
+                </Card>
+              )}
+              
+              {user && !canReview && !hasReviewed && (
+                <Card className="bg-muted/50">
+                  <CardContent className="p-4 text-center text-muted-foreground">
+                    Purchase this product to leave a review.
+                  </CardContent>
+                </Card>
+              )}
+              
+              {!user && (
+                <Card className="bg-muted/50">
+                  <CardContent className="p-4 text-center text-muted-foreground">
+                    <Link to="/login" className="text-primary hover:underline">Sign in</Link> to leave a review.
+                  </CardContent>
+                </Card>
+              )}
+              
+              {/* Review List */}
+              <ReviewList reviews={reviews} averageRating={averageRating} />
             </TabsContent>
           </Tabs>
         </div>

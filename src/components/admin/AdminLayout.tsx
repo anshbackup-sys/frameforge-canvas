@@ -11,7 +11,10 @@ import {
   X,
   Shield,
   BarChart3,
-  Bell
+  Bell,
+  Layers,
+  Gift,
+  Frame
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
@@ -40,9 +43,9 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
   const menuItems = [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/admin' },
     { icon: Package, label: 'Products', path: '/admin/products' },
-    { icon: Package, label: 'Collections', path: '/admin/collections' },
-    { icon: Package, label: 'Bundles', path: '/admin/bundles' },
-    { icon: Package, label: 'Frame Builder', path: '/admin/frame-builder' },
+    { icon: Layers, label: 'Collections', path: '/admin/collections' },
+    { icon: Gift, label: 'Bundles', path: '/admin/bundles' },
+    { icon: Frame, label: 'Frame Builder', path: '/admin/frame-builder' },
     { icon: ShoppingCart, label: 'Orders', path: '/admin/orders' },
     { icon: Users, label: 'Users', path: '/admin/users' },
     { icon: BarChart3, label: 'Analytics', path: '/admin/analytics' },
@@ -61,27 +64,27 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
       <aside
         className={`fixed top-0 left-0 z-40 h-screen transition-transform ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        } bg-slate-900/95 backdrop-blur-lg border-r border-slate-700`}
+        } bg-white/90 backdrop-blur-xl border-r border-gray-200 shadow-xl`}
         style={{ width: '280px' }}
       >
         <div className="h-full flex flex-col">
-          <div className="p-6 border-b border-slate-700">
+          <div className="p-6 border-b border-gray-100">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                <Shield className="h-6 w-6 text-white" />
+              <div className="w-10 h-10 bg-gradient-to-br from-gray-900 to-gray-700 rounded-xl flex items-center justify-center shadow-lg">
+                <Shield className="h-5 w-5 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-white">Kaiga Admin</h1>
-                <p className="text-xs text-slate-400">Management Portal</p>
+                <h1 className="text-xl font-bold text-gray-900">Kaiga Admin</h1>
+                <p className="text-xs text-gray-500">Management Portal</p>
               </div>
             </div>
           </div>
 
-          <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+          <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
             {menuItems.map((item) => {
               const Icon = item.icon;
               const isActive = isActivePath(item.path);
@@ -89,10 +92,10 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                 <Link
                   key={item.path}
                   to={item.path}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
                     isActive
-                      ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg'
-                      : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                      ? 'bg-gray-900 text-white shadow-lg'
+                      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                   }`}
                 >
                   <Icon className="h-5 w-5" />
@@ -102,23 +105,23 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
             })}
           </nav>
 
-          <div className="p-4 border-t border-slate-700">
-            <div className="flex items-center gap-3 p-3 rounded-lg bg-slate-800">
+          <div className="p-4 border-t border-gray-100">
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-gray-50">
               <Avatar className="h-10 w-10">
-                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white">
+                <AvatarFallback className="bg-gradient-to-br from-gray-900 to-gray-700 text-white font-semibold">
                   {user?.email?.charAt(0).toUpperCase() || 'A'}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-white truncate">
+                <p className="text-sm font-medium text-gray-900 truncate">
                   {user?.email}
                 </p>
-                <Badge variant="secondary" className="text-xs">Admin</Badge>
+                <Badge variant="secondary" className="text-xs bg-gray-200 text-gray-700">Admin</Badge>
               </div>
             </div>
             <Button
               variant="ghost"
-              className="w-full mt-3 text-slate-400 hover:text-red-400 hover:bg-red-950/30"
+              className="w-full mt-3 text-gray-600 hover:text-red-600 hover:bg-red-50"
               onClick={handleSignOut}
             >
               <LogOut className="h-4 w-4 mr-2" />
@@ -133,27 +136,27 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
           sidebarOpen ? 'ml-[280px]' : 'ml-0'
         }`}
       >
-        <header className="sticky top-0 z-30 bg-slate-900/80 backdrop-blur-lg border-b border-slate-700">
+        <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-xl border-b border-gray-200">
           <div className="flex items-center justify-between px-6 py-4">
             <div className="flex items-center gap-4">
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="text-slate-400 hover:text-white"
+                className="text-gray-600 hover:text-gray-900 hover:bg-gray-100"
               >
                 {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
               </Button>
               <div>
-                <h2 className="text-xl font-bold text-white">
+                <h2 className="text-xl font-bold text-gray-900">
                   {menuItems.find(item => isActivePath(item.path))?.label || 'Dashboard'}
                 </h2>
-                <p className="text-xs text-slate-400">Manage your store</p>
+                <p className="text-xs text-gray-500">Manage your store</p>
               </div>
             </div>
 
             <div className="flex items-center gap-3">
-              <Button variant="ghost" size="icon" className="text-slate-400 hover:text-white relative">
+              <Button variant="ghost" size="icon" className="text-gray-600 hover:text-gray-900 hover:bg-gray-100 relative">
                 <Bell className="h-5 w-5" />
                 <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></span>
               </Button>

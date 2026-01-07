@@ -53,7 +53,6 @@ const AdminDashboard = () => {
 
   const fetchDashboardData = async () => {
     try {
-      // Fetch all data in parallel
       const [
         productsResult,
         ordersResult,
@@ -96,12 +95,12 @@ const AdminDashboard = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'pending': return 'bg-yellow-600';
-      case 'processing': return 'bg-blue-600';
-      case 'shipped': return 'bg-purple-600';
-      case 'delivered': return 'bg-green-600';
-      case 'cancelled': return 'bg-red-600';
-      default: return 'bg-slate-600';
+      case 'pending': return 'bg-amber-100 text-amber-700';
+      case 'processing': return 'bg-blue-100 text-blue-700';
+      case 'shipped': return 'bg-purple-100 text-purple-700';
+      case 'delivered': return 'bg-green-100 text-green-700';
+      case 'cancelled': return 'bg-red-100 text-red-700';
+      default: return 'bg-gray-100 text-gray-700';
     }
   };
 
@@ -110,7 +109,8 @@ const AdminDashboard = () => {
       title: 'Total Revenue',
       value: `₹${stats.totalRevenue.toLocaleString()}`,
       icon: DollarSign,
-      color: 'from-green-500 to-emerald-600',
+      color: 'from-emerald-500 to-teal-600',
+      bgColor: 'bg-emerald-50',
       onClick: () => navigate('/admin/orders'),
     },
     {
@@ -118,7 +118,8 @@ const AdminDashboard = () => {
       value: stats.totalOrders.toString(),
       subtext: `${stats.pendingOrders} pending`,
       icon: ShoppingCart,
-      color: 'from-blue-500 to-cyan-600',
+      color: 'from-blue-500 to-indigo-600',
+      bgColor: 'bg-blue-50',
       onClick: () => navigate('/admin/orders'),
     },
     {
@@ -126,7 +127,8 @@ const AdminDashboard = () => {
       value: stats.totalProducts.toString(),
       subtext: `${stats.lowStockProducts} low stock`,
       icon: Package,
-      color: 'from-purple-500 to-pink-600',
+      color: 'from-violet-500 to-purple-600',
+      bgColor: 'bg-violet-50',
       onClick: () => navigate('/admin/products'),
     },
     {
@@ -134,6 +136,7 @@ const AdminDashboard = () => {
       value: stats.totalUsers.toString(),
       icon: Users,
       color: 'from-orange-500 to-red-600',
+      bgColor: 'bg-orange-50',
       onClick: () => navigate('/admin/users'),
     },
   ];
@@ -143,11 +146,11 @@ const AdminDashboard = () => {
       <div className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {[1, 2, 3, 4].map((i) => (
-            <Card key={i} className="bg-slate-800/50 border-slate-700">
+            <Card key={i} className="bg-white border-gray-200">
               <CardContent className="p-6">
                 <div className="animate-pulse space-y-4">
-                  <div className="h-4 bg-slate-700 rounded w-1/2"></div>
-                  <div className="h-8 bg-slate-700 rounded w-3/4"></div>
+                  <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                  <div className="h-8 bg-gray-200 rounded w-3/4"></div>
                 </div>
               </CardContent>
             </Card>
@@ -160,8 +163,8 @@ const AdminDashboard = () => {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold text-white mb-2">Dashboard Overview</h1>
-        <p className="text-slate-400">Welcome back! Here's what's happening with your store.</p>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard Overview</h1>
+        <p className="text-gray-500">Welcome back! Here's what's happening with your store.</p>
       </div>
 
       {/* Stats Cards */}
@@ -171,21 +174,21 @@ const AdminDashboard = () => {
           return (
             <Card
               key={index}
-              className="bg-slate-800/50 border-slate-700 hover:bg-slate-800/70 transition-all hover:scale-105 cursor-pointer"
+              className="bg-white border-gray-200 hover:shadow-lg transition-all hover:scale-[1.02] cursor-pointer"
               onClick={card.onClick}
             >
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <div className={`p-3 rounded-lg bg-gradient-to-br ${card.color}`}>
+                  <div className={`p-3 rounded-xl bg-gradient-to-br ${card.color} shadow-lg`}>
                     <Icon className="h-6 w-6 text-white" />
                   </div>
-                  <TrendingUp className="h-5 w-5 text-green-500" />
+                  <TrendingUp className="h-5 w-5 text-emerald-500" />
                 </div>
                 <div>
-                  <p className="text-sm text-slate-400 mb-1">{card.title}</p>
-                  <h3 className="text-2xl font-bold text-white mb-1">{card.value}</h3>
+                  <p className="text-sm text-gray-500 mb-1">{card.title}</p>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-1">{card.value}</h3>
                   {card.subtext && (
-                    <p className="text-xs text-slate-400">{card.subtext}</p>
+                    <p className="text-xs text-gray-400">{card.subtext}</p>
                   )}
                 </div>
               </CardContent>
@@ -196,22 +199,22 @@ const AdminDashboard = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Orders */}
-        <Card className="bg-slate-800/50 border-slate-700">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-white flex items-center gap-2">
-              <Clock className="h-5 w-5" />
+        <Card className="bg-white border-gray-200">
+          <CardHeader className="flex flex-row items-center justify-between border-b border-gray-100">
+            <CardTitle className="text-gray-900 flex items-center gap-2">
+              <Clock className="h-5 w-5 text-gray-500" />
               Recent Orders
             </CardTitle>
             <button
               onClick={() => navigate('/admin/orders')}
-              className="text-sm text-blue-400 hover:text-blue-300"
+              className="text-sm text-blue-600 hover:text-blue-700 font-medium"
             >
               View All
             </button>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-4">
             {recentOrders.length === 0 ? (
-              <div className="text-slate-400 text-center py-8">
+              <div className="text-gray-400 text-center py-8">
                 <ShoppingCart className="h-12 w-12 mx-auto mb-3 opacity-50" />
                 <p>No recent orders</p>
               </div>
@@ -220,18 +223,18 @@ const AdminDashboard = () => {
                 {recentOrders.map((order) => (
                   <div
                     key={order.id}
-                    className="flex items-center justify-between p-3 bg-slate-900/50 rounded-lg hover:bg-slate-900 transition-colors cursor-pointer"
+                    className="flex items-center justify-between p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors cursor-pointer"
                     onClick={() => navigate(`/admin/orders`)}
                   >
                     <div>
-                      <p className="font-medium text-white">{order.order_number || 'N/A'}</p>
-                      <p className="text-sm text-slate-400">
+                      <p className="font-medium text-gray-900">{order.order_number || 'N/A'}</p>
+                      <p className="text-sm text-gray-500">
                         {format(new Date(order.created_at), 'MMM dd, yyyy')}
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="font-medium text-white">₹{Number(order.total).toLocaleString()}</p>
-                      <Badge className={`${getStatusColor(order.status)} text-xs`}>
+                      <p className="font-medium text-gray-900">₹{Number(order.total).toLocaleString()}</p>
+                      <Badge className={`${getStatusColor(order.status)} text-xs font-medium`}>
                         {order.status}
                       </Badge>
                     </div>
@@ -243,22 +246,22 @@ const AdminDashboard = () => {
         </Card>
 
         {/* Low Stock Alert */}
-        <Card className="bg-slate-800/50 border-slate-700">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-white flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-yellow-500" />
+        <Card className="bg-white border-gray-200">
+          <CardHeader className="flex flex-row items-center justify-between border-b border-gray-100">
+            <CardTitle className="text-gray-900 flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-500" />
               Low Stock Alert
             </CardTitle>
             <button
               onClick={() => navigate('/admin/products')}
-              className="text-sm text-blue-400 hover:text-blue-300"
+              className="text-sm text-blue-600 hover:text-blue-700 font-medium"
             >
               View All
             </button>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-4">
             {lowStockProducts.length === 0 ? (
-              <div className="text-slate-400 text-center py-8">
+              <div className="text-gray-400 text-center py-8">
                 <Package className="h-12 w-12 mx-auto mb-3 opacity-50" />
                 <p>All products are well stocked</p>
               </div>
@@ -267,7 +270,7 @@ const AdminDashboard = () => {
                 {lowStockProducts.map((product) => (
                   <div
                     key={product.id}
-                    className="flex items-center gap-3 p-3 bg-slate-900/50 rounded-lg hover:bg-slate-900 transition-colors cursor-pointer"
+                    className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors cursor-pointer"
                     onClick={() => navigate(`/admin/products/edit/${product.id}`)}
                   >
                     <img
@@ -276,10 +279,10 @@ const AdminDashboard = () => {
                       className="w-12 h-12 rounded-lg object-cover"
                     />
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-white truncate">{product.name}</p>
-                      <p className="text-sm text-yellow-400">Only {product.stock} left</p>
+                      <p className="font-medium text-gray-900 truncate">{product.name}</p>
+                      <p className="text-sm text-amber-600">Only {product.stock} left</p>
                     </div>
-                    <Badge variant="destructive" className="bg-yellow-600">
+                    <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
                       Low
                     </Badge>
                   </div>
