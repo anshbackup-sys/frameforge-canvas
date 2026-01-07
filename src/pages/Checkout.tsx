@@ -11,7 +11,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Loader2, Plus } from "lucide-react";
+import { Loader2, Plus, CreditCard, Wallet, Banknote } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 interface Address {
@@ -25,6 +25,12 @@ interface Address {
   is_default: boolean;
 }
 
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
+
 const Checkout = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -34,6 +40,7 @@ const Checkout = () => {
   const [selectedAddress, setSelectedAddress] = useState<string>("");
   const [paymentMethod, setPaymentMethod] = useState("cod");
   const [loading, setLoading] = useState(false);
+  const [razorpayLoaded, setRazorpayLoaded] = useState(false);
   const [showAddAddress, setShowAddAddress] = useState(false);
   const [newAddress, setNewAddress] = useState({
     label: "",
@@ -54,7 +61,16 @@ const Checkout = () => {
       return;
     }
     fetchAddresses();
+    loadRazorpayScript();
   }, [user, items, navigate]);
+
+  const loadRazorpayScript = () => {
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.async = true;
+    script.onload = () => setRazorpayLoaded(true);
+    document.body.appendChild(script);
+  };
 
   const fetchAddresses = async () => {
     if (!user) return;
@@ -110,67 +126,192 @@ const Checkout = () => {
     });
   };
 
-  const handlePlaceOrder = async () => {
-    if (!user || !selectedAddress) {
-      toast.error("Please select a delivery address");
+  const getItemPrice = (item: any) => {
+    if (item.custom_frame_order) {
+      return item.custom_frame_order.total_price;
+    }
+    return item.product?.price || 0;
+  };
+
+  const subtotal = items.reduce((sum, item) => 
+    sum + getItemPrice(item) * item.quantity, 0
+  );
+  const shipping = subtotal > 1000 ? 0 : 100;
+  const tax = subtotal * 0.18;
+  const total = subtotal + shipping + tax;
+
+  const createOrder = async (paymentStatus: string = 'pending') => {
+    const address = addresses.find(a => a.id === selectedAddress);
+    if (!address) throw new Error("Address not found");
+
+    // Create order
+    const { data: order, error: orderError } = await supabase
+      .from("orders")
+      .insert([{
+        user_id: user!.id,
+        total: total,
+        status: "pending",
+        payment_method: paymentMethod,
+        payment_status: paymentStatus,
+        shipping_address: {
+          label: address.label,
+          street: address.street,
+          city: address.city,
+          state: address.state,
+          postal_code: address.postal_code,
+          country: address.country,
+        }
+      }])
+      .select()
+      .single();
+
+    if (orderError) throw orderError;
+
+    // Create order items
+    const orderItems = items.map(item => ({
+      order_id: order.id,
+      product_id: item.product_id,
+      quantity: item.quantity,
+      price: getItemPrice(item),
+    }));
+
+    const { error: itemsError } = await supabase
+      .from("order_items")
+      .insert(orderItems);
+
+    if (itemsError) throw itemsError;
+
+    // Create order status history
+    await supabase
+      .from("order_status_history")
+      .insert([{
+        order_id: order.id,
+        status: "pending",
+        notes: "Order placed successfully"
+      }]);
+
+    return order;
+  };
+
+  const sendOrderConfirmationEmail = async (orderId: string) => {
+    try {
+      const address = addresses.find(a => a.id === selectedAddress);
+      await supabase.functions.invoke('send-order-email', {
+        body: {
+          orderId,
+          email: user?.email,
+          customerName: user?.user_metadata?.full_name || 'Customer',
+          orderTotal: total,
+          shippingAddress: address,
+          emailType: 'confirmation'
+        }
+      });
+    } catch (error) {
+      console.error('Error sending confirmation email:', error);
+    }
+  };
+
+  const handleRazorpayPayment = async () => {
+    if (!razorpayLoaded) {
+      toast.error("Payment gateway is loading. Please wait.");
       return;
     }
 
     setLoading(true);
 
     try {
-      const address = addresses.find(a => a.id === selectedAddress);
-      if (!address) throw new Error("Address not found");
+      // Create Razorpay order
+      const { data: razorpayOrder, error: razorpayError } = await supabase.functions.invoke('create-razorpay-order', {
+        body: {
+          amount: Math.round(total * 100), // Amount in paise
+          currency: 'INR',
+          receipt: `order_${Date.now()}`
+        }
+      });
 
-      // Create order
-      const { data: order, error: orderError } = await supabase
-        .from("orders")
-        .insert([{
-          user_id: user.id,
-          total: subtotal + shipping + tax,
-          status: "pending",
-          payment_method: paymentMethod,
-          payment_status: paymentMethod === "cod" ? "pending" : "paid",
-          shipping_address: {
-            label: address.label,
-            street: address.street,
-            city: address.city,
-            state: address.state,
-            postal_code: address.postal_code,
-            country: address.country,
+      if (razorpayError || !razorpayOrder?.id) {
+        throw new Error('Failed to create payment order');
+      }
+
+      // Create order in database with pending payment
+      const order = await createOrder('pending');
+
+      // Open Razorpay checkout
+      const options = {
+        key: razorpayOrder.key_id,
+        amount: razorpayOrder.amount,
+        currency: razorpayOrder.currency,
+        name: 'Kaiga',
+        description: 'Order Payment',
+        order_id: razorpayOrder.id,
+        handler: async (response: any) => {
+          try {
+            // Verify payment
+            const { data: verifyResult, error: verifyError } = await supabase.functions.invoke('verify-razorpay-payment', {
+              body: {
+                orderId: order.id,
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature
+              }
+            });
+
+            if (verifyError || !verifyResult?.success) {
+              throw new Error('Payment verification failed');
+            }
+
+            // Clear cart and navigate
+            await clearCart();
+            await sendOrderConfirmationEmail(order.id);
+            toast.success("Payment successful! Order placed.");
+            navigate(`/order-confirmation/${order.id}`);
+          } catch (error: any) {
+            console.error('Payment verification error:', error);
+            toast.error("Payment verification failed. Please contact support.");
           }
-        }])
-        .select()
-        .single();
+        },
+        prefill: {
+          email: user?.email,
+          name: user?.user_metadata?.full_name || ''
+        },
+        theme: {
+          color: '#1a1a1a'
+        },
+        modal: {
+          ondismiss: () => {
+            setLoading(false);
+            toast.error("Payment cancelled");
+          }
+        }
+      };
 
-      if (orderError) throw orderError;
+      const razorpay = new window.Razorpay(options);
+      razorpay.open();
+    } catch (error: any) {
+      console.error("Payment error:", error);
+      toast.error(error.message || "Failed to initiate payment");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-      // Create order items
-      const orderItems = items.map(item => ({
-        order_id: order.id,
-        product_id: item.product_id,
-        quantity: item.quantity,
-        price: item.product?.price || 0,
-      }));
+  const handlePlaceOrder = async () => {
+    if (!user || !selectedAddress) {
+      toast.error("Please select a delivery address");
+      return;
+    }
 
-      const { error: itemsError } = await supabase
-        .from("order_items")
-        .insert(orderItems);
+    if (paymentMethod !== 'cod') {
+      await handleRazorpayPayment();
+      return;
+    }
 
-      if (itemsError) throw itemsError;
+    setLoading(true);
 
-      // Create order status history
-      await supabase
-        .from("order_status_history")
-        .insert([{
-          order_id: order.id,
-          status: "pending",
-          notes: "Order placed successfully"
-        }]);
-
-      // Clear cart
+    try {
+      const order = await createOrder('pending');
       await clearCart();
-
+      await sendOrderConfirmationEmail(order.id);
       toast.success("Order placed successfully!");
       navigate(`/order-confirmation/${order.id}`);
     } catch (error: any) {
@@ -181,11 +322,13 @@ const Checkout = () => {
     }
   };
 
-  const subtotal = items.reduce((sum, item) => 
-    sum + (item.product?.price || 0) * item.quantity, 0
-  );
-  const shipping = subtotal > 1000 ? 0 : 100;
-  const tax = subtotal * 0.18; // 18% GST
+  const getItemName = (item: any) => {
+    if (item.custom_frame_order) {
+      const config = item.custom_frame_order.frame_config;
+      return `Custom Frame - ${config?.size || 'Custom Size'}`;
+    }
+    return item.product?.name || 'Unknown Product';
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -224,7 +367,7 @@ const Checkout = () => {
                 <CardContent>
                   <RadioGroup value={selectedAddress} onValueChange={setSelectedAddress}>
                     {addresses.map((address) => (
-                      <div key={address.id} className="flex items-start space-x-3 p-4 border rounded-lg mb-3">
+                      <div key={address.id} className="flex items-start space-x-3 p-4 border rounded-lg mb-3 hover:border-primary transition-colors">
                         <RadioGroupItem value={address.id} id={address.id} />
                         <Label htmlFor={address.id} className="flex-1 cursor-pointer">
                           <div className="font-semibold">{address.label}</div>
@@ -341,11 +484,11 @@ const Checkout = () => {
                       {items.map((item) => (
                         <div key={item.id} className="flex justify-between items-center py-2 border-b">
                           <div className="flex-1">
-                            <div className="font-medium">{item.product?.name}</div>
+                            <div className="font-medium">{getItemName(item)}</div>
                             <div className="text-sm text-muted-foreground">Qty: {item.quantity}</div>
                           </div>
                           <div className="font-semibold">
-                            ₹{((item.product?.price || 0) * item.quantity).toFixed(2)}
+                            ₹{(getItemPrice(item) * item.quantity).toFixed(2)}
                           </div>
                         </div>
                       ))}
@@ -372,25 +515,34 @@ const Checkout = () => {
                 </CardHeader>
                 <CardContent>
                   <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod}>
-                    <div className="flex items-center space-x-3 p-4 border rounded-lg mb-3">
+                    <div className={`flex items-center space-x-3 p-4 border rounded-lg mb-3 cursor-pointer transition-colors ${paymentMethod === 'cod' ? 'border-primary bg-primary/5' : 'hover:border-primary/50'}`}>
                       <RadioGroupItem value="cod" id="cod" />
-                      <Label htmlFor="cod" className="flex-1 cursor-pointer">
-                        <div className="font-semibold">Cash on Delivery</div>
-                        <div className="text-sm text-muted-foreground">Pay when you receive</div>
+                      <Label htmlFor="cod" className="flex-1 cursor-pointer flex items-center gap-3">
+                        <Banknote className="h-5 w-5 text-muted-foreground" />
+                        <div>
+                          <div className="font-semibold">Cash on Delivery</div>
+                          <div className="text-sm text-muted-foreground">Pay when you receive</div>
+                        </div>
                       </Label>
                     </div>
-                    <div className="flex items-center space-x-3 p-4 border rounded-lg mb-3">
+                    <div className={`flex items-center space-x-3 p-4 border rounded-lg mb-3 cursor-pointer transition-colors ${paymentMethod === 'upi' ? 'border-primary bg-primary/5' : 'hover:border-primary/50'}`}>
                       <RadioGroupItem value="upi" id="upi" />
-                      <Label htmlFor="upi" className="flex-1 cursor-pointer">
-                        <div className="font-semibold">UPI</div>
-                        <div className="text-sm text-muted-foreground">Pay using UPI apps</div>
+                      <Label htmlFor="upi" className="flex-1 cursor-pointer flex items-center gap-3">
+                        <Wallet className="h-5 w-5 text-muted-foreground" />
+                        <div>
+                          <div className="font-semibold">UPI / Wallet</div>
+                          <div className="text-sm text-muted-foreground">Pay using UPI, Paytm, PhonePe, etc.</div>
+                        </div>
                       </Label>
                     </div>
-                    <div className="flex items-center space-x-3 p-4 border rounded-lg">
+                    <div className={`flex items-center space-x-3 p-4 border rounded-lg cursor-pointer transition-colors ${paymentMethod === 'card' ? 'border-primary bg-primary/5' : 'hover:border-primary/50'}`}>
                       <RadioGroupItem value="card" id="card" />
-                      <Label htmlFor="card" className="flex-1 cursor-pointer">
-                        <div className="font-semibold">Credit/Debit Card</div>
-                        <div className="text-sm text-muted-foreground">Pay securely with card</div>
+                      <Label htmlFor="card" className="flex-1 cursor-pointer flex items-center gap-3">
+                        <CreditCard className="h-5 w-5 text-muted-foreground" />
+                        <div>
+                          <div className="font-semibold">Credit/Debit Card</div>
+                          <div className="text-sm text-muted-foreground">Pay securely with card</div>
+                        </div>
                       </Label>
                     </div>
                   </RadioGroup>
@@ -401,16 +553,18 @@ const Checkout = () => {
                     </Button>
                     <Button 
                       onClick={handlePlaceOrder} 
-                      className="flex-1"
+                      className="flex-1 btn-hero"
                       disabled={loading}
                     >
                       {loading ? (
                         <>
                           <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Placing Order...
+                          Processing...
                         </>
-                      ) : (
+                      ) : paymentMethod === 'cod' ? (
                         "Place Order"
+                      ) : (
+                        "Pay Now"
                       )}
                     </Button>
                   </div>
@@ -442,7 +596,7 @@ const Checkout = () => {
                   <div className="border-t pt-3">
                     <div className="flex justify-between font-bold text-lg">
                       <span>Total</span>
-                      <span>₹{(subtotal + shipping + tax).toFixed(2)}</span>
+                      <span>₹{total.toFixed(2)}</span>
                     </div>
                   </div>
                 </div>

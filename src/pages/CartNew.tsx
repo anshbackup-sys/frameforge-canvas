@@ -1,18 +1,41 @@
-import { Minus, Plus, X, ShoppingCart, ArrowRight, Shield, Gift } from "lucide-react";
+import { Minus, Plus, X, ShoppingCart, ArrowRight, Shield, Gift, Frame } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useCart } from "@/contexts/CartContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
 const CartNew = () => {
   const { items, loading, updateQuantity, removeFromCart } = useCart();
 
+  const getItemPrice = (item: any) => {
+    if (item.custom_frame_order) {
+      return item.custom_frame_order.total_price;
+    }
+    return item.product?.price || 0;
+  };
+
+  const getItemName = (item: any) => {
+    if (item.custom_frame_order) {
+      const config = item.custom_frame_order.frame_config;
+      return `Custom Frame - ${config?.size || 'Custom Size'}`;
+    }
+    return item.product?.name || 'Unknown Product';
+  };
+
+  const getItemImage = (item: any) => {
+    if (item.custom_frame_order) {
+      return item.custom_frame_order.image_url || '/placeholder.svg';
+    }
+    return item.product?.image_url || '/placeholder.svg';
+  };
+
   const subtotal = items.reduce((sum, item) => 
-    sum + (item.product?.price || 0) * item.quantity, 0
+    sum + getItemPrice(item) * item.quantity, 0
   );
   const shipping = subtotal >= 3000 ? 0 : 299;
   const total = subtotal + shipping;
@@ -83,10 +106,18 @@ const CartNew = () => {
                       {/* Product Image */}
                       <div className="relative w-24 h-24 flex-shrink-0">
                         <img
-                          src={item.product?.image_url}
-                          alt={item.product?.name}
+                          src={getItemImage(item)}
+                          alt={getItemName(item)}
                           className="w-full h-full object-cover rounded-lg"
                         />
+                        {item.custom_frame_order && (
+                          <div className="absolute -top-2 -right-2">
+                            <Badge variant="secondary" className="text-xs">
+                              <Frame className="h-3 w-3 mr-1" />
+                              Custom
+                            </Badge>
+                          </div>
+                        )}
                       </div>
 
                       {/* Product Details */}
@@ -94,11 +125,18 @@ const CartNew = () => {
                         <div className="flex items-start justify-between gap-4">
                           <div className="flex-1 min-w-0">
                             <h3 className="font-semibold text-lg mb-1 truncate">
-                              {item.product?.name}
+                              {getItemName(item)}
                             </h3>
-                            <p className="text-sm text-muted-foreground mb-3">
-                              In Stock: {item.product?.stock || 0} units
-                            </p>
+                            {item.custom_frame_order ? (
+                              <div className="text-sm text-muted-foreground space-y-1">
+                                <p>Material: {item.custom_frame_order.frame_config?.material || 'N/A'}</p>
+                                <p>Color: {item.custom_frame_order.frame_config?.color || 'N/A'}</p>
+                              </div>
+                            ) : (
+                              <p className="text-sm text-muted-foreground mb-3">
+                                In Stock: {item.product?.stock || 0} units
+                              </p>
+                            )}
                           </div>
                           
                           <button
@@ -110,7 +148,7 @@ const CartNew = () => {
                           </button>
                         </div>
 
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between mt-3">
                           {/* Quantity Controls */}
                           <div className="flex items-center gap-3">
                             <button
@@ -128,7 +166,7 @@ const CartNew = () => {
                             
                             <button
                               onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                              disabled={item.quantity >= (item.product?.stock || 0)}
+                              disabled={!item.custom_frame_order && item.quantity >= (item.product?.stock || 0)}
                               className="h-8 w-8 rounded-md border border-input hover:bg-accent hover:text-accent-foreground disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-colors"
                               aria-label="Increase quantity"
                             >
@@ -139,10 +177,10 @@ const CartNew = () => {
                           {/* Price */}
                           <div className="text-right">
                             <p className="text-lg font-bold">
-                              ₹{((item.product?.price || 0) * item.quantity).toLocaleString()}
+                              ₹{(getItemPrice(item) * item.quantity).toLocaleString()}
                             </p>
                             <p className="text-sm text-muted-foreground">
-                              ₹{(item.product?.price || 0).toLocaleString()} each
+                              ₹{getItemPrice(item).toLocaleString()} each
                             </p>
                           </div>
                         </div>
@@ -161,7 +199,7 @@ const CartNew = () => {
                   
                   <div className="space-y-3 text-sm mb-6">
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Subtotal ({items.length} items)</span>
+                      <span className="text-muted-foreground">Subtotal ({items.reduce((sum, item) => sum + item.quantity, 0)} items)</span>
                       <span className="font-medium">₹{subtotal.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between">
