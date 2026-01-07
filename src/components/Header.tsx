@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Search, User, Heart, ShoppingCart, Menu, X, LogOut, Package } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Search, User, Heart, ShoppingCart, Menu, X, LogOut, Package, Palette } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
 import { useWishlist } from "@/contexts/WishlistContext";
+import { supabase } from "@/integrations/supabase/client";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,6 +17,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+interface SearchSuggestion {
+  id: string;
+  name: string;
+  category: string;
+  price: number;
+  image_url: string;
+}
+
 const Header = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
@@ -23,6 +32,49 @@ const Header = () => {
   const { itemCount: wishlistCount } = useWishlist();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchQuery.trim().length >= 2) {
+        fetchSuggestions(searchQuery);
+      } else {
+        setSuggestions([]);
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  const fetchSuggestions = async (query: string) => {
+    const { data } = await supabase
+      .from("products")
+      .select("id, name, category, price, image_url")
+      .or(`name.ilike.%${query}%,category.ilike.%${query}%`)
+      .limit(5);
+    setSuggestions(data || []);
+    setShowSuggestions(true);
+  };
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+      setShowSuggestions(false);
+      setSearchQuery("");
+    }
+  };
 
   const handleSignOut = async () => {
     await signOut();
@@ -70,17 +122,44 @@ const Header = () => {
             </nav>
 
             {/* Search Bar - Desktop */}
-            <div className="hidden md:flex items-center space-x-4 flex-1 max-w-md mx-8">
-              <div className="relative flex-1">
+            <div className="hidden md:flex items-center space-x-4 flex-1 max-w-md mx-8" ref={searchRef}>
+              <form onSubmit={handleSearch} className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   type="search"
                   placeholder="Search frames, sizes or styles..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
+                  onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
                   className="pl-10 bg-muted/50 border-muted"
                 />
-              </div>
+                {showSuggestions && suggestions.length > 0 && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-background border rounded-lg shadow-lg z-50 overflow-hidden">
+                    {suggestions.map((s) => (
+                      <Link
+                        key={s.id}
+                        to={`/product/${s.id}`}
+                        onClick={() => { setShowSuggestions(false); setSearchQuery(""); }}
+                        className="flex items-center gap-3 p-3 hover:bg-muted transition-colors"
+                      >
+                        <img src={s.image_url} alt={s.name} className="w-10 h-10 object-cover rounded" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{s.name}</p>
+                          <p className="text-xs text-muted-foreground">{s.category}</p>
+                        </div>
+                        <span className="text-sm font-semibold">₹{s.price.toLocaleString()}</span>
+                      </Link>
+                    ))}
+                    <Link
+                      to={`/search?q=${encodeURIComponent(searchQuery)}`}
+                      onClick={() => { setShowSuggestions(false); setSearchQuery(""); }}
+                      className="block p-3 text-center text-sm text-primary hover:bg-muted border-t"
+                    >
+                      See all results for "{searchQuery}"
+                    </Link>
+                  </div>
+                )}
+              </form>
             </div>
 
             {/* Action Icons */}
@@ -125,6 +204,10 @@ const Header = () => {
                     <DropdownMenuItem onClick={() => navigate("/profile")}>
                       <Package className="mr-2 h-4 w-4" />
                       Orders
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate("/saved-designs")}>
+                      <Palette className="mr-2 h-4 w-4" />
+                      Saved Designs
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleSignOut}>
