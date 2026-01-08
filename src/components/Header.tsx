@@ -8,6 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { supabase } from "@/integrations/supabase/client";
+import kaigaLogo from "@/assets/kaiga-logo.jpeg";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -101,11 +102,12 @@ const Header = () => {
         <div className="container-wide">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
-            <Link to="/" className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-lg">K</span>
-              </div>
-              <span className="font-serif font-bold text-2xl text-foreground tracking-tight">Kaiga</span>
+            <Link to="/" className="flex items-center">
+              <img 
+                src={kaigaLogo} 
+                alt="Kaiga - Crafted Just For You" 
+                className="h-10 w-auto object-contain"
+              />
             </Link>
 
             {/* Desktop Navigation - with spacing from logo */}

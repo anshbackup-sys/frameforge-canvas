@@ -311,7 +311,7 @@ export const HomePageContent = () => {
       </section>
 
       {/* How It Works */}
-      <section className="py-24 bg-background">
+      <section className="py-24 bg-background overflow-hidden">
         <div className="container-wide">
           <div className="text-center mb-16">
             <Badge variant="outline" className="mb-4 px-4 py-1">Simple Process</Badge>
@@ -323,25 +323,42 @@ export const HomePageContent = () => {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-4 gap-8 relative">
-            {/* Connection Line */}
-            <div className="hidden md:block absolute top-16 left-[12.5%] right-[12.5%] h-0.5 bg-gradient-to-r from-primary/20 via-primary to-primary/20" />
-            
-            {howItWorks.map((item, index) => (
-              <div key={index} className="relative text-center">
-                <div className="relative z-10 w-32 h-32 mx-auto mb-6 rounded-full bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center border-2 border-primary/20">
-                  <item.icon className="w-12 h-12 text-primary" />
-                  <div className="absolute -top-2 -right-2 w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold text-sm">
-                    {item.step}
-                  </div>
-                </div>
-                <h3 className="text-xl font-serif font-bold mb-2 text-foreground">{item.title}</h3>
-                <p className="text-muted-foreground">{item.description}</p>
+          <div className="relative">
+            {/* Connection Line - Desktop */}
+            <div className="hidden md:block absolute top-20 left-0 right-0 h-1">
+              <div className="max-w-4xl mx-auto h-full flex items-center">
+                <div className="flex-1 h-0.5 bg-border mx-16" />
               </div>
-            ))}
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-12 md:gap-8">
+              {howItWorks.map((item, index) => (
+                <div key={index} className="relative text-center group">
+                  {/* Step Number Badge */}
+                  <div className="relative z-10 mx-auto mb-6">
+                    <div className="w-40 h-40 mx-auto rounded-full bg-muted/50 flex items-center justify-center border-2 border-border group-hover:border-primary/50 group-hover:bg-primary/5 transition-all duration-300">
+                      <item.icon className="w-16 h-16 text-primary" />
+                    </div>
+                    <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-10 h-10 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold text-lg shadow-lg">
+                      {item.step}
+                    </div>
+                  </div>
+                  
+                  {/* Arrow for mobile */}
+                  {index < howItWorks.length - 1 && (
+                    <div className="md:hidden flex justify-center my-4">
+                      <ArrowRight className="w-6 h-6 text-muted-foreground rotate-90" />
+                    </div>
+                  )}
+                  
+                  <h3 className="text-xl font-serif font-bold mb-3 text-foreground">{item.title}</h3>
+                  <p className="text-muted-foreground max-w-[200px] mx-auto">{item.description}</p>
+                </div>
+              ))}
+            </div>
           </div>
 
-          <div className="text-center mt-12">
+          <div className="text-center mt-16">
             <Button size="lg" className="btn-hero text-lg px-10" asChild>
               <Link to="/custom-builder">
                 Start Your Design
